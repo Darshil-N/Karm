@@ -17,6 +17,11 @@ import PendingApproval from "./pages/PendingApproval";
 // Dashboard Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
 import TPODashboard from "./pages/tpo/TPODashboard";
+import Dashboard from "./pages/tpo/Dashboard";
+import ManageDrives from "./pages/tpo/ManageDrives";
+import Companies from "./pages/tpo/Companies";
+import Students from "./pages/tpo/Students";
+import Reports from "./pages/tpo/Reports";
 import HODDashboard from "./pages/hod/HODDashboard";
 import AdminVerify from "./pages/admin/AdminVerify";
 import NotFound from "./pages/NotFound";
@@ -49,11 +54,14 @@ const App = () => (
             <Route path="/student/results" element={<StudentDashboard />} />
 
             {/* TPO Routes */}
-            <Route path="/tpo/dashboard" element={<TPODashboard />} />
-            <Route path="/tpo/drives" element={<TPODashboard />} />
-            <Route path="/tpo/companies" element={<TPODashboard />} />
-            <Route path="/tpo/students" element={<TPODashboard />} />
-            <Route path="/tpo/reports" element={<TPODashboard />} />
+            <Route path="/tpo" element={<TPODashboard />}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="drives" element={<ManageDrives />} />
+              <Route path="companies" element={<Companies />} />
+              <Route path="students" element={<Students />} />
+              <Route path="reports" element={<Reports />} />
+              <Route index element={<Dashboard />} />
+            </Route>
 
             {/* HOD Routes */}
             <Route path="/hod/dashboard" element={<HODDashboard />} />
