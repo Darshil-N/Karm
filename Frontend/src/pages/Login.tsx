@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockLogin } from '@/lib/mockData';
+import { loginWithEmail } from '@/lib/firebaseService';
 import { LogIn } from 'lucide-react';
 
 const Login = () => {
@@ -24,7 +24,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const user = await mockLogin(credentials.email, credentials.password);
+      const user = await loginWithEmail(credentials.email, credentials.password);
       
       if (user) {
         login(user);
@@ -47,18 +47,14 @@ const Login = () => {
           case 'authority':
             navigate('/admin/verify');
             break;
+          default:
+            navigate('/');
         }
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid credentials. Please try again.",
-          variant: "destructive",
-        });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An error occurred during login.",
+        title: "Login Failed",
+        description: error.message || "Invalid credentials. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -121,21 +117,14 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm font-medium mb-2">Demo Accounts:</p>
-            <div className="text-xs space-y-1 text-muted-foreground">
-              <p>Student: student@test.com</p>
-              <p>TPO: tpo@test.com</p>
-              <p>HOD: hod@test.com</p>
-              <p>Authority: authority@test.com</p>
-              <p className="mt-2">Password: (any)</p>
-            </div>
-          </div>
-
           <p className="text-center text-sm text-muted-foreground mt-6">
             Don't have an account?{' '}
             <button onClick={() => navigate('/signup-hub')} className="text-primary hover:underline">
               Sign up
+            </button>
+            {' | '}
+            <button onClick={() => navigate('/authority-signup')} className="text-red-600 hover:underline">
+              Authority Signup
             </button>
           </p>
         </CardContent>

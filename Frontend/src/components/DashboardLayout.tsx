@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,13 +19,34 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout = ({ children, sidebar }: DashboardLayoutProps) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect to login if no user is logged in
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, isLoading, navigate]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // If no user, return null (redirect will happen in useEffect)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex w-full">
@@ -59,10 +80,10 @@ const DashboardLayout = ({ children, sidebar }: DashboardLayoutProps) => {
                 <Button variant="ghost" className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user?.name.charAt(0)}
+                      {user?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden sm:inline">{user?.name}</span>
+                  <span className="hidden sm:inline">{user?.name || 'User'}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
