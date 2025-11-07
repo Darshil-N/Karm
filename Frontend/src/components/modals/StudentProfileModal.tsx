@@ -1,0 +1,487 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Download, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  GraduationCap, 
+  Star, 
+  Calendar,
+  Briefcase,
+  Award,
+  Code,
+  FileText
+} from 'lucide-react';
+
+interface Student {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  branch: string;
+  year: string;
+  cgpa: number;
+  placementStatus: string;
+  company?: string;
+  package?: string;
+  skillSet: string[];
+  location: string;
+  resumeScore: number;
+  applications: number;
+  offers: number;
+  profileDetails: {
+    rollNumber: string;
+    dateOfBirth: string;
+    address: string;
+    fatherName: string;
+    motherName: string;
+    emergencyContact: string;
+  };
+  academicDetails: {
+    tenthPercentage: number;
+    twelfthPercentage: number;
+    diplomaPercentage?: number;
+    backlogs: number;
+    projects: Array<{
+      title: string;
+      description: string;
+      technologies: string[];
+      duration: string;
+    }>;
+    internships: Array<{
+      company: string;
+      role: string;
+      duration: string;
+      description: string;
+    }>;
+    certifications: Array<{
+      name: string;
+      issuer: string;
+      date: string;
+    }>;
+  };
+  placementHistory: Array<{
+    company: string;
+    role: string;
+    applicationDate: string;
+    status: string;
+    currentRound: string;
+  }>;
+}
+
+interface StudentProfileModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  student: Student | null;
+}
+
+const StudentProfileModal = ({ open, onOpenChange, student }: StudentProfileModalProps) => {
+  const { toast } = useToast();
+
+  const handleDownloadResume = () => {
+    toast({
+      title: "Download Resume",
+      description: `Downloading ${student?.name}'s resume...`,
+    });
+  };
+
+  const handleSendEmail = () => {
+    toast({
+      title: "Send Email",
+      description: `Opening email client for ${student?.email}...`,
+    });
+  };
+
+  const handleUpdateStatus = (newStatus: string) => {
+    toast({
+      title: "Status Updated",
+      description: `${student?.name}'s placement status updated to ${newStatus}`,
+    });
+  };
+
+  if (!student) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{student.name} - Student Profile</DialogTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownloadResume}>
+                <Download className="h-4 w-4 mr-1" />
+                Resume
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSendEmail}>
+                <Mail className="h-4 w-4 mr-1" />
+                Email
+              </Button>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="academic">Academic</TabsTrigger>
+            <TabsTrigger value="placement">Placement</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            {/* Basic Information */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl">
+                      {student.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <h3 className="font-bold">{student.name}</h3>
+                      <p className="text-sm text-muted-foreground">{student.profileDetails.rollNumber}</p>
+                      <Badge className={
+                        student.placementStatus === 'Placed' ? 'bg-secondary text-secondary-foreground' :
+                        student.placementStatus === 'In Process' ? 'bg-accent text-accent-foreground' :
+                        'bg-muted text-muted-foreground'
+                      }>
+                        {student.placementStatus}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      {student.email}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      {student.phone}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      {student.location}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                      {student.branch} - {student.year}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">CGPA</span>
+                      <span className="font-bold text-primary">{student.cgpa}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Resume Score</span>
+                      <span className="font-bold text-secondary">{student.resumeScore}%</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Applications</span>
+                      <span className="font-bold">{student.applications}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Offers</span>
+                      <span className="font-bold text-accent">{student.offers}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Skills */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Code className="h-5 w-5" />
+                  Skills & Technologies
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {student.skillSet.map((skill, idx) => (
+                    <Badge key={idx} variant="outline">{skill}</Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Personal Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Date of Birth</label>
+                    <p>{student.profileDetails.dateOfBirth}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Father's Name</label>
+                    <p>{student.profileDetails.fatherName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Mother's Name</label>
+                    <p>{student.profileDetails.motherName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Emergency Contact</label>
+                    <p>{student.profileDetails.emergencyContact}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground">Address</label>
+                    <p>{student.profileDetails.address}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Current Placement Status */}
+            {student.company && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Current Placement
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold">{student.company}</h4>
+                      <p className="text-muted-foreground">Package: {student.package}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleUpdateStatus('Verified')}>
+                        Verify Placement
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="academic" className="space-y-4">
+            {/* Academic Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Academic Performance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">10th Percentage</p>
+                    <p className="text-2xl font-bold text-primary">{student.academicDetails.tenthPercentage}%</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">12th Percentage</p>
+                    <p className="text-2xl font-bold text-secondary">{student.academicDetails.twelfthPercentage}%</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Current CGPA</p>
+                    <p className="text-2xl font-bold text-accent">{student.cgpa}</p>
+                  </div>
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Backlogs</p>
+                    <p className="text-2xl font-bold">{student.academicDetails.backlogs}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Projects */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Projects</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {student.academicDetails.projects.map((project, idx) => (
+                    <div key={idx} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">{project.title}</h4>
+                        <span className="text-sm text-muted-foreground">{project.duration}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">{project.description}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {project.technologies.map((tech, techIdx) => (
+                          <Badge key={techIdx} variant="outline" className="text-xs">{tech}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Internships */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Internships</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {student.academicDetails.internships.map((internship, idx) => (
+                    <div key={idx} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">{internship.role} at {internship.company}</h4>
+                        <span className="text-sm text-muted-foreground">{internship.duration}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{internship.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Certifications */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Certifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {student.academicDetails.certifications.map((cert, idx) => (
+                    <div key={idx} className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <h4 className="font-semibold">{cert.name}</h4>
+                        <p className="text-sm text-muted-foreground">{cert.issuer}</p>
+                      </div>
+                      <span className="text-sm text-muted-foreground">{cert.date}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="placement" className="space-y-4">
+            {/* Placement Statistics */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="pt-6 text-center">
+                  <p className="text-2xl font-bold text-primary">{student.applications}</p>
+                  <p className="text-sm text-muted-foreground">Total Applications</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6 text-center">
+                  <p className="text-2xl font-bold text-secondary">{student.offers}</p>
+                  <p className="text-sm text-muted-foreground">Offers Received</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6 text-center">
+                  <p className="text-2xl font-bold text-accent">
+                    {student.offers > 0 ? ((student.offers / student.applications) * 100).toFixed(1) : 0}%
+                  </p>
+                  <p className="text-sm text-muted-foreground">Success Rate</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Placement History */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Placement History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {student.placementHistory.map((history, idx) => (
+                    <div key={idx} className="flex items-center justify-between border rounded-lg p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold">
+                          {history.company[0]}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">{history.company}</h4>
+                          <p className="text-sm text-muted-foreground">{history.role}</p>
+                          <p className="text-xs text-muted-foreground">Applied: {history.applicationDate}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={
+                          history.status === 'Selected' ? 'bg-secondary text-secondary-foreground' :
+                          history.status === 'In Process' ? 'bg-accent text-accent-foreground' :
+                          history.status === 'Rejected' ? 'bg-destructive text-destructive-foreground' :
+                          'bg-muted text-muted-foreground'
+                        }>
+                          {history.status}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">{history.currentRound}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Documents & Files
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { name: 'Resume', type: 'PDF', size: '245 KB', uploaded: '2024-10-15' },
+                    { name: '10th Marksheet', type: 'PDF', size: '182 KB', uploaded: '2024-09-20' },
+                    { name: '12th Marksheet', type: 'PDF', size: '195 KB', uploaded: '2024-09-20' },
+                    { name: 'College Transcript', type: 'PDF', size: '320 KB', uploaded: '2024-11-01' },
+                    { name: 'Aadhaar Card', type: 'PDF', size: '156 KB', uploaded: '2024-09-18' },
+                    { name: 'Passport Photo', type: 'JPG', size: '45 KB', uploaded: '2024-09-18' },
+                  ].map((doc, idx) => (
+                    <div key={idx} className="flex items-center justify-between border rounded-lg p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-accent" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold">{doc.name}</h4>
+                          <p className="text-sm text-muted-foreground">{doc.type} • {doc.size} • Uploaded {doc.uploaded}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default StudentProfileModal;
