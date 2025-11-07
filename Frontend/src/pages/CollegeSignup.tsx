@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Upload } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
 const CollegeSignup = () => {
   const navigate = useNavigate();
@@ -13,25 +13,17 @@ const CollegeSignup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     collegeName: '',
-    email: '',
     website: '',
     licenseNumber: '',
-    password: '',
-    confirmPassword: '',
+    tpoEmail: '',
+    tpoPassword: '',
+    hodEmail: '',
+    hodPassword: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     
     // Simulate API call
@@ -69,17 +61,6 @@ const CollegeSignup = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Official College Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="website">College Website</Label>
               <Input
                 id="website"
@@ -101,36 +82,46 @@ const CollegeSignup = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="proof">Proof of Existence</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                <Upload className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Upload affiliation letter or registration document
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">PDF or JPG (Max 10MB)</p>
-                <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Admin Password</Label>
+              <Label htmlFor="tpoEmail">TPO Email</Label>
               <Input
-                id="password"
-                type="password"
+                id="tpoEmail"
+                type="email"
                 required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                value={formData.tpoEmail}
+                onChange={(e) => setFormData({ ...formData, tpoEmail: e.target.value })}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="tpoPassword">TPO Password</Label>
               <Input
-                id="confirmPassword"
+                id="tpoPassword"
                 type="password"
                 required
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                value={formData.tpoPassword}
+                onChange={(e) => setFormData({ ...formData, tpoPassword: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hodEmail">HOD Email</Label>
+              <Input
+                id="hodEmail"
+                type="email"
+                required
+                value={formData.hodEmail}
+                onChange={(e) => setFormData({ ...formData, hodEmail: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hodPassword">HOD Password</Label>
+              <Input
+                id="hodPassword"
+                type="password"
+                required
+                value={formData.hodPassword}
+                onChange={(e) => setFormData({ ...formData, hodPassword: e.target.value })}
               />
             </div>
 

@@ -24,7 +24,7 @@ const SignupHub = () => {
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-full gradient-primary text-white mb-6">
                 <GraduationCap className="h-10 w-10" />
               </div>
-              <h2 className="text-2xl font-bold mb-3">I am a Student / Staff</h2>
+              <h2 className="text-2xl font-bold mb-3">I am a Student</h2>
               <p className="text-muted-foreground">
                 Join as a student, placement officer, or head of department to access placement opportunities.
               </p>
