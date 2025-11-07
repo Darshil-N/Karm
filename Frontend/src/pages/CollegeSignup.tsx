@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { registerCollege } from '@/lib/firebaseService';
 import { Building2 } from 'lucide-react';
 
 const CollegeSignup = () => {
@@ -16,9 +17,7 @@ const CollegeSignup = () => {
     website: '',
     licenseNumber: '',
     tpoEmail: '',
-    tpoPassword: '',
     hodEmail: '',
-    hodPassword: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,15 +25,29 @@ const CollegeSignup = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await registerCollege({
+        name: formData.collegeName,
+        website: formData.website,
+        licenseNumber: formData.licenseNumber,
+        tpoEmail: formData.tpoEmail,
+        hodEmail: formData.hodEmail,
+      });
+      
       toast({
         title: "Application Submitted",
-        description: "Your college registration is pending verification.",
+        description: "Your college registration is pending verification by the authority.",
       });
       navigate('/pending-verification');
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "An error occurred during registration.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -93,17 +106,6 @@ const CollegeSignup = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tpoPassword">TPO Password</Label>
-              <Input
-                id="tpoPassword"
-                type="password"
-                required
-                value={formData.tpoPassword}
-                onChange={(e) => setFormData({ ...formData, tpoPassword: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="hodEmail">HOD Email</Label>
               <Input
                 id="hodEmail"
@@ -114,15 +116,11 @@ const CollegeSignup = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="hodPassword">HOD Password</Label>
-              <Input
-                id="hodPassword"
-                type="password"
-                required
-                value={formData.hodPassword}
-                onChange={(e) => setFormData({ ...formData, hodPassword: e.target.value })}
-              />
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Login passwords for TPO and HOD will be set by the authority during approval. 
+                You will receive email notifications with login credentials once approved.
+              </p>
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>

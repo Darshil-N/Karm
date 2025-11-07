@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { registerStudent, getApprovedColleges, CollegeData } from '@/lib/firebaseService';
 import { GraduationCap } from 'lucide-react';
 
 const UserSignup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [colleges, setColleges] = useState<CollegeData[]>([]);
   const [formData, setFormData] = useState({
     college: '',
     department: '',
@@ -20,19 +22,60 @@ const UserSignup = () => {
     password: '',
   });
 
+  useEffect(() => {
+    const fetchColleges = async () => {
+      try {
+        const approvedColleges = await getApprovedColleges();
+        setColleges(approvedColleges);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load colleges",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    fetchColleges();
+  }, [toast]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.college || !formData.department || !formData.fullName || !formData.email || !formData.password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await registerStudent(
+        formData.email,
+        formData.password,
+        formData.fullName,
+        formData.college,
+        formData.department
+      );
+      
       toast({
         title: "Account Created",
         description: "Your account is pending approval from your HOD.",
       });
       navigate('/pending-approval');
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "An error occurred during registration.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -55,8 +98,11 @@ const UserSignup = () => {
                   <SelectValue placeholder="Choose your college" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mit">MIT College of Engineering</SelectItem>
-                  <SelectItem value="stanford">Stanford University</SelectItem>
+                  {colleges.map((college) => (
+                    <SelectItem key={college.id} value={college.id!}>
+                      {college.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

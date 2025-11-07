@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@/lib/mockData';
+import { UserData } from '@/lib/firebaseService';
 
 interface AuthContextType {
-  user: User | null;
-  login: (user: User) => void;
+  user: UserData | null;
+  login: (user: UserData) => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -11,7 +11,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const login = (userData: User) => {
+  const login = (userData: UserData) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };
