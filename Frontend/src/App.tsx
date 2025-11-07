@@ -6,11 +6,15 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 
+// Firebase connection test
+import "./lib/firebaseTest";
+
 // Public Pages
 import Landing from "./pages/Landing";
 import SignupHub from "./pages/SignupHub";
 import CollegeSignup from "./pages/CollegeSignup";
 import UserSignup from "./pages/UserSignup";
+import AuthoritySignup from "./pages/AuthoritySignup";
 import Login from "./pages/Login";
 import PendingVerification from "./pages/PendingVerification";
 import PendingApproval from "./pages/PendingApproval";
@@ -52,6 +56,7 @@ const App = () => (
             <Route path="/signup-hub" element={<SignupHub />} />
             <Route path="/signup/college" element={<CollegeSignup />} />
             <Route path="/signup/user" element={<UserSignup />} />
+            <Route path="/authority-signup" element={<AuthoritySignup />} />
             <Route path="/login" element={<Login />} />
             <Route path="/pending-verification" element={<PendingVerification />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
