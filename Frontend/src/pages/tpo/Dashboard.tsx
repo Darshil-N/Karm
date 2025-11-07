@@ -2,9 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
 import CreateDriveModal from '@/components/modals/CreateDriveModal';
 import DriveDetailsModal from '@/components/modals/DriveDetailsModal';
+import BulkEmailModal from '@/components/modals/BulkEmailModal';
+import { getPlacementDrives, PlacementDriveData } from '@/lib/firebaseService';
 import { 
   Briefcase, 
   Building2,
@@ -16,67 +19,97 @@ import {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [createDriveOpen, setCreateDriveOpen] = useState(false);
   const [driveDetailsOpen, setDriveDetailsOpen] = useState(false);
+  const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
   const [selectedDrive, setSelectedDrive] = useState(null);
+  const [drives, setDrives] = useState<PlacementDriveData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock drive data - replace with Firebase data
-  const activeDrives = [
-    { 
-      id: 1, 
-      companyName: 'Google', 
-      roleName: 'Software Engineer', 
-      applicants: 145, 
-      status: 'Round 2',
-      description: 'Develop and maintain web applications using modern technologies.',
-      requirements: ['React', 'Node.js', 'Python'],
-      rounds: ['Resume Screening', 'Technical Round', 'Manager Round', 'HR Round'],
-      benefits: 'Health insurance, flexible hours, remote work options',
-      contactEmail: 'hr@google.com',
-      contactPhone: '+1-650-253-0000',
-      salary: '₹24 LPA',
-      location: 'Bangalore',
-      deadline: '2024-12-15',
-      type: 'On-Campus'
-    },
-    { 
-      id: 2, 
-      companyName: 'Microsoft', 
-      roleName: 'Cloud Architect', 
-      applicants: 98, 
-      status: 'Round 1',
-      description: 'Design and implement cloud infrastructure solutions.',
-      requirements: ['Azure', 'DevOps', 'Python'],
-      rounds: ['Technical Assessment', 'System Design', 'Behavioral Round'],
-      benefits: 'Comprehensive benefits package',
-      contactEmail: 'careers@microsoft.com',
-      contactPhone: '+1-425-882-8080',
-      salary: '₹28 LPA',
-      location: 'Hyderabad',
-      deadline: '2024-12-20',
-      type: 'Virtual'
-    },
-    { 
-      id: 3, 
-      companyName: 'Amazon', 
-      roleName: 'SDE-1', 
-      applicants: 120, 
-      status: 'Applications Open',
-      description: 'Build scalable distributed systems and services.',
-      requirements: ['Java', 'AWS', 'Data Structures'],
-      rounds: ['Online Assessment', 'Technical Interview', 'Bar Raiser'],
-      benefits: 'Stock options, health benefits, career growth',
-      contactEmail: 'university@amazon.com',
-      contactPhone: '+1-206-266-1000',
-      salary: '₹22 LPA',
-      location: 'Mumbai',
-      deadline: '2024-12-10',
-      type: 'On-Campus'
-    },
-  ];
+  // Function to determine drive status based on dates
+  const getDriveStatus = (drive: PlacementDriveData): string => {
+    const now = new Date();
+    const driveDate = new Date(drive.driveDate);
+    const deadline = new Date(drive.applicationDeadline);
+    
+    // If manually set status is cancelled, keep it
+    if (drive.status === 'cancelled') return 'cancelled';
+    
+    // If drive date has passed, it's completed
+    if (driveDate < now) return 'completed';
+    
+    // If deadline has passed but drive hasn't happened yet, still active
+    // If deadline hasn't passed, it's active
+    if (deadline >= now || driveDate >= now) return 'active';
+    
+    return 'active';
+  };
+
+  // Get only active drives for dashboard
+  const getActiveDrives = () => {
+    return drives.filter(drive => getDriveStatus(drive) === 'active').slice(0, 3); // Show only first 3 for dashboard
+  };
+
+  // Calculate dashboard statistics
+  const getStats = () => {
+    const activeDrives = drives.filter(drive => getDriveStatus(drive) === 'active');
+    const uniqueCompanies = new Set(drives.map(drive => drive.companyName)).size;
+    const totalApplications = drives.reduce((sum, drive) => sum + (drive.applicants || 0), 0);
+    const placedStudents = Math.floor(totalApplications * 0.15); // Assuming 15% placement rate
+    
+    return {
+      active: activeDrives.length,
+      companies: uniqueCompanies,
+      applications: totalApplications,
+      placed: placedStudents
+    };
+  };
+
+  // Fetch placement drives from Firebase
+  const fetchDrives = async () => {
+    console.log('Dashboard fetchDrives called with user:', user);
+    
+    if (!user || !user.collegeId) {
+      console.error('User or collegeId missing:', { user, collegeId: user?.collegeId });
+      toast({
+        title: "Error",
+        description: "Unable to find your college information. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const fetchedDrives = await getPlacementDrives(user.collegeId);
+      console.log('Dashboard fetched drives:', fetchedDrives);
+      setDrives(fetchedDrives);
+    } catch (error) {
+      console.error('Error fetching drives:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load placement drives.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrives();
+  }, [user, toast]);
+
+  const stats = getStats();
 
   const handleCreateNewDrive = () => {
     setCreateDriveOpen(true);
+  };
+
+  const handleDriveCreated = () => {
+    // Refresh drives list when a new drive is created
+    fetchDrives();
   };
 
   const handleManageDrive = (drive: any) => {
@@ -96,10 +129,7 @@ const Dashboard = () => {
         });
         break;
       case 'bulk-email':
-        toast({
-          title: "Bulk Email",
-          description: "Opening email composition tool...",
-        });
+        setBulkEmailOpen(true);
         break;
       default:
         break;
@@ -127,13 +157,13 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active Drives</p>
-                <p className="text-3xl font-bold">12</p>
+                <p className="text-3xl font-bold">{loading ? '-' : stats.active}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Briefcase className="h-6 w-6 text-primary" />
               </div>
             </div>
-            <p className="text-xs text-secondary mt-2">+2 this week</p>
+            <p className="text-xs text-secondary mt-2">Currently accepting applications</p>
           </CardContent>
         </Card>
 
@@ -142,13 +172,13 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Companies</p>
-                <p className="text-3xl font-bold">45</p>
+                <p className="text-3xl font-bold">{loading ? '-' : stats.companies}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
                 <Building2 className="h-6 w-6 text-secondary" />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">All time</p>
+            <p className="text-xs text-muted-foreground mt-2">Registered for placement</p>
           </CardContent>
         </Card>
 
@@ -157,13 +187,13 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Students Placed</p>
-                <p className="text-3xl font-bold">287</p>
+                <p className="text-3xl font-bold">{loading ? '-' : stats.placed}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
                 <Users className="h-6 w-6 text-accent" />
               </div>
             </div>
-            <p className="text-xs text-secondary mt-2">68% placement rate</p>
+            <p className="text-xs text-secondary mt-2">This academic year</p>
           </CardContent>
         </Card>
 
@@ -171,14 +201,14 @@ const Dashboard = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Offers Rolled Out</p>
-                <p className="text-3xl font-bold">342</p>
+                <p className="text-sm text-muted-foreground">Total Applications</p>
+                <p className="text-3xl font-bold">{loading ? '-' : stats.applications}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-primary" />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">This year</p>
+            <p className="text-xs text-muted-foreground mt-2">Across all drives</p>
           </CardContent>
         </Card>
       </div>
@@ -190,23 +220,41 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {activeDrives.map((drive) => (
-              <div key={drive.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center text-white font-bold text-xl">
-                    {drive.companyName[0]}
-                  </div>
-                  <div>
-                    <p className="font-medium">{drive.companyName} - {drive.roleName}</p>
-                    <p className="text-sm text-muted-foreground">{drive.applicants} applicants • {drive.salary}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-secondary">{drive.status}</span>
-                  <Button size="sm" onClick={() => handleManageDrive(drive)}>Manage</Button>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-lg">Loading active drives...</div>
+                  <div className="text-sm text-muted-foreground">Please wait while we fetch the placement drives</div>
                 </div>
               </div>
-            ))}
+            ) : getActiveDrives().length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="text-lg">No active placement drives</div>
+                  <div className="text-sm text-muted-foreground">Create your first placement drive to get started</div>
+                </div>
+              </div>
+            ) : (
+              getActiveDrives().map((drive) => (
+                <div key={drive.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xl">
+                      {drive.companyName[0]}
+                    </div>
+                    <div>
+                      <p className="font-medium">{drive.companyName} - {drive.roleName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {drive.applicants || 0} applicants • {drive.salary} • Deadline: {new Date(drive.applicationDeadline).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-green-600">Active</span>
+                    <Button size="sm" onClick={() => handleManageDrive(drive)}>Manage</Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -247,12 +295,17 @@ const Dashboard = () => {
       {/* Modals */}
       <CreateDriveModal 
         open={createDriveOpen} 
-        onOpenChange={setCreateDriveOpen} 
+        onOpenChange={setCreateDriveOpen}
+        onDriveCreated={handleDriveCreated}
       />
       <DriveDetailsModal 
         open={driveDetailsOpen} 
         onOpenChange={setDriveDetailsOpen}
         drive={selectedDrive}
+      />
+      <BulkEmailModal
+        open={bulkEmailOpen}
+        onOpenChange={setBulkEmailOpen}
       />
     </div>
   );

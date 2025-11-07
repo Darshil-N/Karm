@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // --- Collection Rules ---
+
+    // USERS Collection
+    match /users/{userId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
+
+    // COLLEGES Collection
+    match /colleges/{collegeId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
+
+    // PLACEMENT_DRIVES Collection
+    match /placement_drives/{driveId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
+
+    // EMAIL_REQUESTS Collection
+    match /email_requests/{emailId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
+
+    // COMPANIES Collection
+    match /companies/{companyId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
+
+    // STUDENTS Collection
+    match /students/{studentId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
+
+    // DRIVES Collection
+    match /drives/{driveId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

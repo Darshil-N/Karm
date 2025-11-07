@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Plus, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { createPlacementDrive } from '@/lib/firebaseService';
 
 interface DriveFormData {
   companyName: string;
@@ -38,16 +40,26 @@ interface DriveFormData {
 interface CreateDriveModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDriveCreated?: () => void;
+  selectedCompany?: {
+    id: number;
+    name: string;
+    contact: {
+      email: string;
+      phone: string;
+    };
+  };
 }
 
-const CreateDriveModal = ({ open, onOpenChange }: CreateDriveModalProps) => {
+const CreateDriveModal = ({ open, onOpenChange, onDriveCreated, selectedCompany }: CreateDriveModalProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [currentSkill, setCurrentSkill] = useState('');
   const [currentRound, setCurrentRound] = useState('');
 
   const [formData, setFormData] = useState<DriveFormData>({
-    companyName: '',
+    companyName: selectedCompany?.name || '',
     roleName: '',
     jobDescription: '',
     salary: '',
@@ -66,9 +78,21 @@ const CreateDriveModal = ({ open, onOpenChange }: CreateDriveModalProps) => {
     rounds: [],
     benefits: '',
     bondPeriod: '',
-    contactEmail: '',
-    contactPhone: '',
+    contactEmail: selectedCompany?.contact?.email || '',
+    contactPhone: selectedCompany?.contact?.phone || '',
   });
+
+  // Update form when selectedCompany changes
+  useEffect(() => {
+    if (selectedCompany) {
+      setFormData(prev => ({
+        ...prev,
+        companyName: selectedCompany.name,
+        contactEmail: selectedCompany.contact?.email || '',
+        contactPhone: selectedCompany.contact?.phone || '',
+      }));
+    }
+  }, [selectedCompany]);
 
   const branches = [
     'Computer Science', 'Information Technology', 'Electronics', 
@@ -126,26 +150,63 @@ const CreateDriveModal = ({ open, onOpenChange }: CreateDriveModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user || !user.collegeId) {
+      toast({
+        title: "Error",
+        description: "Unable to identify your college. Please try logging in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.applicationDeadline || !formData.driveDate) {
+      toast({
+        title: "Error",
+        description: "Please select both application deadline and drive date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Simulate API call - replace with Firebase integration
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Here you would integrate with Firebase
-      // const driveRef = await addDoc(collection(db, 'drives'), {
-      //   ...formData,
-      //   createdAt: new Date(),
-      //   createdBy: currentUser.uid,
-      //   status: 'draft'
-      // });
+      const driveData = {
+        companyName: formData.companyName,
+        roleName: formData.roleName,
+        jobDescription: formData.jobDescription,
+        salary: formData.salary,
+        location: formData.location,
+        workMode: formData.workMode,
+        experience: formData.experience,
+        skills: formData.skills,
+        eligibilityCriteria: formData.eligibilityCriteria,
+        applicationDeadline: formData.applicationDeadline,
+        driveDate: formData.driveDate,
+        rounds: formData.rounds,
+        benefits: formData.benefits,
+        bondPeriod: formData.bondPeriod,
+        contactEmail: formData.contactEmail,
+        contactPhone: formData.contactPhone,
+        tpoUid: user.uid,
+        collegeId: user.collegeId,
+        status: 'active' as const
+      };
 
+      const driveId = await createPlacementDrive(driveData);
+      
       toast({
         title: "Drive Created Successfully",
         description: `${formData.companyName} - ${formData.roleName} drive has been created.`,
       });
 
       onOpenChange(false);
+      // Call the callback to refresh the drives list
+      if (onDriveCreated) {
+        onDriveCreated();
+      }
+      
       // Reset form
       setFormData({
         companyName: '',
@@ -170,10 +231,11 @@ const CreateDriveModal = ({ open, onOpenChange }: CreateDriveModalProps) => {
         contactEmail: '',
         contactPhone: '',
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error creating drive:', error);
       toast({
         title: "Error",
-        description: "Failed to create drive. Please try again.",
+        description: error.message || "Failed to create drive. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -186,6 +248,9 @@ const CreateDriveModal = ({ open, onOpenChange }: CreateDriveModalProps) => {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Placement Drive</DialogTitle>
+          <DialogDescription>
+            Fill in the details to create a new placement drive for your college.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">

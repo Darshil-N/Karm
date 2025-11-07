@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { PlacementDriveData } from '@/lib/firebaseService';
 import { 
   Eye, 
   Edit, 
@@ -25,23 +26,6 @@ import {
   XCircle,
   Clock
 } from 'lucide-react';
-
-interface Drive {
-  id: number;
-  companyName: string;
-  roleName: string;
-  salary: string;
-  location: string;
-  deadline: string;
-  status: string;
-  type: string;
-  description: string;
-  requirements: string[];
-  rounds: string[];
-  benefits: string;
-  contactEmail: string;
-  contactPhone: string;
-}
 
 interface Applicant {
   id: number;
@@ -62,7 +46,7 @@ interface Applicant {
 interface DriveDetailsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  drive: Drive | null;
+  drive: PlacementDriveData | null;
 }
 
 const DriveDetailsModal = ({ open, onOpenChange, drive }: DriveDetailsModalProps) => {
@@ -71,7 +55,12 @@ const DriveDetailsModal = ({ open, onOpenChange, drive }: DriveDetailsModalProps
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [editMode, setEditMode] = useState(false);
-  const [editedDrive, setEditedDrive] = useState<Drive | null>(drive);
+  const [editedDrive, setEditedDrive] = useState<PlacementDriveData | null>(drive);
+
+  // Sync editedDrive with drive prop changes
+  useEffect(() => {
+    setEditedDrive(drive);
+  }, [drive]);
 
   // Mock applicant data - replace with Firebase data
   const mockApplicants: Applicant[] = [
@@ -238,8 +227,8 @@ const DriveDetailsModal = ({ open, onOpenChange, drive }: DriveDetailsModalProps
                   <div>
                     <label className="text-sm font-medium">Description</label>
                     <Textarea 
-                      value={editedDrive?.description || ''} 
-                      onChange={(e) => setEditedDrive(prev => prev ? {...prev, description: e.target.value} : null)}
+                      value={editedDrive?.jobDescription || ''} 
+                      onChange={(e) => setEditedDrive(prev => prev ? {...prev, jobDescription: e.target.value} : null)}
                       rows={4}
                     />
                   </div>
@@ -275,7 +264,7 @@ const DriveDetailsModal = ({ open, onOpenChange, drive }: DriveDetailsModalProps
                           <Calendar className="h-4 w-4 text-accent" />
                           <span className="text-sm font-medium">Deadline</span>
                         </div>
-                        <p className="font-bold">{drive.deadline}</p>
+                        <p className="font-bold">{new Date(drive.applicationDeadline).toLocaleDateString()}</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -285,19 +274,19 @@ const DriveDetailsModal = ({ open, onOpenChange, drive }: DriveDetailsModalProps
                       <CardTitle>Job Description</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">{drive.description}</p>
+                      <p className="text-muted-foreground">{drive.jobDescription}</p>
                     </CardContent>
                   </Card>
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Requirements</CardTitle>
+                        <CardTitle>Required Skills</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="flex flex-wrap gap-2">
-                          {drive.requirements.map((req, idx) => (
-                            <Badge key={idx} variant="outline">{req}</Badge>
+                          {drive.skills && drive.skills.map((skill, idx) => (
+                            <Badge key={idx} variant="outline">{skill}</Badge>
                           ))}
                         </div>
                       </CardContent>
@@ -308,7 +297,7 @@ const DriveDetailsModal = ({ open, onOpenChange, drive }: DriveDetailsModalProps
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
-                          {drive.rounds.map((round, idx) => (
+                          {drive.rounds && drive.rounds.map((round, idx) => (
                             <div key={idx} className="flex items-center gap-2">
                               <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
                                 {idx + 1}

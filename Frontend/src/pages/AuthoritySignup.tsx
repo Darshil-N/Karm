@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { fixUserData, createDemoCollege } from '@/lib/firebaseService';
 import { Shield } from 'lucide-react';
 
 const AuthoritySignup = () => {
@@ -73,6 +74,57 @@ const AuthoritySignup = () => {
     }
   };
 
+  const handleFixUserData = async () => {
+    try {
+      // First create demo college
+      const collegeId = await createDemoCollege();
+      
+      // Then fix the TPO user data
+      await fixUserData('tpo@a.com', collegeId);
+      
+      toast({
+        title: "Success",
+        description: "Demo college created and TPO user data fixed!",
+      });
+    } catch (error: any) {
+      console.error('Fix user data error:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateTestCollege = async () => {
+    try {
+      // Create a test college for approval testing
+      const testCollegeId = 'test_college_' + Date.now();
+      
+      await setDoc(doc(db, 'colleges', testCollegeId), {
+        name: 'Test College for Approval',
+        website: 'https://testcollege.edu',
+        licenseNumber: 'TEST123456',
+        tpoEmail: 'testtpo@testcollege.edu',
+        hodEmail: 'testhod@testcollege.edu',
+        isApproved: false,
+        createdAt: new Date()
+      });
+      
+      toast({
+        title: "Success",
+        description: "Test college created for approval testing!",
+      });
+    } catch (error: any) {
+      console.error('Create test college error:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted px-4 py-12">
       <Card className="max-w-md w-full">
@@ -132,6 +184,28 @@ const AuthoritySignup = () => {
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Create Authority Account'}
+            </Button>
+
+            {/* Temporary fix button */}
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full" 
+              size="lg" 
+              onClick={handleFixUserData}
+            >
+              Setup Demo College & Fix TPO Data
+            </Button>
+
+            {/* Test college creation button */}
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full" 
+              size="lg" 
+              onClick={handleCreateTestCollege}
+            >
+              Create Test College for Approval
             </Button>
           </form>
 

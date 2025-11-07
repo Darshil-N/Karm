@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { 
   Download, 
   Mail, 
@@ -20,7 +22,7 @@ import {
 } from 'lucide-react';
 
 interface Student {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -85,10 +87,113 @@ const StudentProfileModal = ({ open, onOpenChange, student }: StudentProfileModa
   const { toast } = useToast();
 
   const handleDownloadResume = () => {
+    if (!student) return;
+
     toast({
-      title: "Download Resume",
-      description: `Downloading ${student?.name}'s resume...`,
+      title: "Generating Resume",
+      description: `Creating PDF resume for ${student.name}...`,
     });
+
+    try {
+      // Create a comprehensive resume PDF
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(24);
+      doc.setTextColor(40);
+      doc.text(student.name, 20, 25);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(100);
+      doc.text(student.email, 20, 35);
+      doc.text(student.phone, 20, 42);
+      doc.text(student.location, 20, 49);
+
+      // Education Section
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text('Education', 20, 65);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(60);
+      doc.text(`${student.branch} - ${student.year}`, 20, 75);
+      doc.text(`CGPA: ${student.cgpa}/10`, 20, 82);
+      
+      if (student.academicDetails) {
+        doc.text(`10th Grade: ${student.academicDetails.tenthPercentage}%`, 20, 89);
+        doc.text(`12th Grade: ${student.academicDetails.twelfthPercentage}%`, 20, 96);
+        if (student.academicDetails.backlogs > 0) {
+          doc.text(`Backlogs: ${student.academicDetails.backlogs}`, 20, 103);
+        }
+      }
+
+      // Skills Section
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text('Skills', 20, 120);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(60);
+      const skillsText = student.skillSet.join(', ');
+      const skillsLines = doc.splitTextToSize(skillsText, 170);
+      doc.text(skillsLines, 20, 130);
+
+      // Projects Section
+      if (student.academicDetails?.projects && student.academicDetails.projects.length > 0) {
+        let yPosition = 150;
+        doc.setFontSize(16);
+        doc.setTextColor(40);
+        doc.text('Projects', 20, yPosition);
+        
+        student.academicDetails.projects.forEach((project, index) => {
+          yPosition += 15;
+          doc.setFontSize(14);
+          doc.setTextColor(60);
+          doc.text(`${index + 1}. ${project.title}`, 20, yPosition);
+          
+          yPosition += 8;
+          doc.setFontSize(10);
+          doc.setTextColor(80);
+          const descLines = doc.splitTextToSize(project.description, 170);
+          doc.text(descLines, 25, yPosition);
+          
+          yPosition += descLines.length * 5;
+          doc.text(`Technologies: ${project.technologies.join(', ')}`, 25, yPosition);
+          doc.text(`Duration: ${project.duration}`, 25, yPosition + 5);
+          yPosition += 10;
+        });
+      }
+
+      // Placement Information
+      let placementY = 220;
+      if (student.placementStatus === 'Placed' && student.company) {
+        doc.setFontSize(16);
+        doc.setTextColor(40);
+        doc.text('Placement Details', 20, placementY);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(60);
+        doc.text(`Company: ${student.company}`, 20, placementY + 12);
+        doc.text(`Package: ${student.package}`, 20, placementY + 19);
+        doc.text(`Status: ${student.placementStatus}`, 20, placementY + 26);
+      }
+
+      // Save the PDF
+      const fileName = `${student.name.replace(/\s+/g, '_')}_Resume.pdf`;
+      doc.save(fileName);
+
+      toast({
+        title: "Resume Downloaded",
+        description: `${student.name}'s resume has been downloaded successfully.`,
+      });
+
+    } catch (error) {
+      toast({
+        title: "Error Generating Resume",
+        description: "There was an error creating the resume PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendEmail = () => {

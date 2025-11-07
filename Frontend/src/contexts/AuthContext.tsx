@@ -18,12 +18,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for stored user on mount
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      console.log('AuthContext loading stored user:', parsedUser);
+      setUser(parsedUser);
     }
     setIsLoading(false);
   }, []);
 
   const login = (userData: UserData) => {
+    console.log('AuthContext login called with:', userData);
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };

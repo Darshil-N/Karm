@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { CompanyService } from '@/services/firebaseService';
 import { Upload, X, Plus } from 'lucide-react';
 
 interface CompanyFormData {
@@ -42,9 +43,11 @@ interface CompanyFormData {
 interface AddCompanyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCompanyAdded?: (company: any) => void;
+  existingCompanies?: any[];
 }
 
-const AddCompanyModal = ({ open, onOpenChange }: AddCompanyModalProps) => {
+const AddCompanyModal = ({ open, onOpenChange, onCompanyAdded, existingCompanies = [] }: AddCompanyModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [currentSpecialization, setCurrentSpecialization] = useState('');
@@ -151,24 +154,55 @@ const AddCompanyModal = ({ open, onOpenChange }: AddCompanyModalProps) => {
     setLoading(true);
 
     try {
-      // Simulate API call - replace with Firebase integration
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Here you would integrate with Firebase
-      // if (formData.logo) {
-      //   const logoRef = ref(storage, `company-logos/${formData.name}-${Date.now()}`);
-      //   await uploadBytes(logoRef, formData.logo);
-      //   const logoURL = await getDownloadURL(logoRef);
-      //   formData.logoURL = logoURL;
-      // }
-      
-      // const companyRef = await addDoc(collection(db, 'companies'), {
-      //   ...formData,
-      //   createdAt: new Date(),
-      //   createdBy: currentUser.uid,
-      //   status: 'active'
-      // });
+      // Create company object for Firebase
+      const companyData = {
+        name: formData.name,
+        logo: formData.name.charAt(0).toUpperCase(),
+        industry: formData.industry,
+        location: formData.headquarters,
+        tier: formData.tier,
+        rating: 4.0, // Default rating
+        description: formData.description,
+        website: formData.website,
+        contact: {
+          email: formData.contactInfo.recruitmentEmail || formData.contactInfo.hrEmail,
+          phone: formData.contactInfo.hrPhone,
+          website: formData.website,
+        },
+        stats: {
+          totalDrives: 0,
+          totalHires: 0,
+          avgSalary: formData.companyDetails.averagePackage || '₹0 LPA',
+          lastVisit: new Date().toISOString().split('T')[0],
+        },
+        foundedYear: formData.foundedYear,
+        employeeCount: formData.employeeCount,
+        hrDetails: {
+          name: formData.contactInfo.hrName,
+          email: formData.contactInfo.hrEmail,
+          phone: formData.contactInfo.hrPhone,
+        },
+        socialMedia: {
+          linkedin: formData.socialMedia.linkedin,
+          twitter: formData.socialMedia.twitter,
+          facebook: formData.socialMedia.facebook,
+        },
+      };
 
+      // Add company to Firebase
+      const companyId = await CompanyService.addCompany(companyData);
+      
+      // Create company object with Firebase ID for parent callback
+      const newCompany = {
+        id: companyId,
+        ...companyData,
+      };
+
+      // Call the callback to add company to parent list
+      if (onCompanyAdded) {
+        onCompanyAdded(newCompany);
+      }
+      
       toast({
         title: "Company Added Successfully",
         description: `${formData.name} has been added to the company database.`,

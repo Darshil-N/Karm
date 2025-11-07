@@ -21,6 +21,7 @@ import {
   Star,
   Download,
   Eye,
+  Edit,
   CheckCircle,
   XCircle,
   Clock,
@@ -74,6 +75,205 @@ const Students = () => {
 
     return () => unsubscribe();
   }, [toast]);
+
+  const handleExportData = () => {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma@example.com',
+      phone: '+91-9876543210',
+      branch: 'Computer Science',
+      year: '4th Year',
+      cgpa: 8.7,
+      placementStatus: 'Placed',
+      company: 'Google',
+      package: '₹24 LPA',
+      skillSet: ['React', 'Node.js', 'Python', 'AWS'],
+      location: 'Mumbai',
+      resumeScore: 85,
+      applications: 8,
+      offers: 2,
+      profileDetails: {
+        rollNumber: 'CS2020001',
+        dateOfBirth: '2001-05-15',
+        address: '123 Main St, Mumbai',
+        fatherName: 'Ram Sharma',
+        motherName: 'Sita Sharma',
+        emergencyContact: '+91-9876543220'
+      },
+      academicDetails: {
+        tenthPercentage: 89.5,
+        twelfthPercentage: 91.2,
+        backlogs: 0,
+        projects: [
+          {
+            title: 'E-commerce Platform',
+            description: 'Built a complete e-commerce solution using MERN stack',
+            technologies: ['React', 'Node.js', 'MongoDB', 'Express'],
+            duration: '3 months'
+          }
+        ],
+        internships: [
+          {
+            company: 'TechCorp',
+            role: 'Software Developer Intern',
+            duration: '6 months',
+            description: 'Worked on frontend development'
+          }
+        ],
+        certifications: [
+          {
+            name: 'AWS Certified Developer',
+            issuer: 'Amazon Web Services',
+            date: '2023-12-01'
+          }
+        ]
+      },
+      placementHistory: [
+        {
+          company: 'Google',
+          role: 'Software Engineer',
+          applicationDate: '2024-02-15',
+          status: 'Selected',
+          currentRound: 'Offer Extended'
+        }
+      ]
+    },
+    {
+      id: 2,
+      name: 'Priya Patel',
+      email: 'priya.patel@example.com',
+      phone: '+91-9876543211',
+      branch: 'Information Technology',
+      year: '4th Year',
+      cgpa: 9.1,
+      placementStatus: 'In Process',
+      company: 'Microsoft',
+      package: 'Pending',
+      skillSet: ['Java', 'Spring', 'Angular', 'Docker'],
+      location: 'Bangalore',
+      resumeScore: 92,
+      applications: 5,
+      offers: 1,
+      profileDetails: {
+        rollNumber: 'IT2020002',
+        dateOfBirth: '2001-08-22',
+        address: '456 Tech Park, Bangalore',
+        fatherName: 'Raj Patel',
+        motherName: 'Maya Patel',
+        emergencyContact: '+91-9876543221'
+      },
+      academicDetails: {
+        tenthPercentage: 95.0,
+        twelfthPercentage: 93.5,
+        backlogs: 0,
+        projects: [],
+        internships: [],
+        certifications: []
+      },
+      placementHistory: []
+    },
+    {
+      id: 3,
+      name: 'Arjun Singh',
+      email: 'arjun.singh@example.com',
+      phone: '+91-9876543212',
+      branch: 'Electronics',
+      year: '4th Year',
+      cgpa: 7.8,
+      placementStatus: 'Applying',
+      company: null,
+      package: null,
+      skillSet: ['C++', 'Embedded Systems', 'IoT', 'MATLAB'],
+      location: 'Delhi',
+      resumeScore: 78,
+      applications: 12,
+      offers: 0,
+      profileDetails: {
+        rollNumber: 'EC2020003',
+        dateOfBirth: '2001-12-10',
+        address: '789 Electronics City, Delhi',
+        fatherName: 'Vikram Singh',
+        motherName: 'Pooja Singh',
+        emergencyContact: '+91-9876543222'
+      },
+      academicDetails: {
+        tenthPercentage: 82.0,
+        twelfthPercentage: 85.5,
+        backlogs: 1,
+        projects: [],
+        internships: [],
+        certifications: []
+      },
+      placementHistory: []
+    },
+    {
+      id: 4,
+      name: 'Sneha Reddy',
+      email: 'sneha.reddy@example.com',
+      phone: '+91-9876543213',
+      branch: 'Computer Science',
+      year: '4th Year',
+      cgpa: 8.9,
+      placementStatus: 'Placed',
+      company: 'Amazon',
+      package: '₹22 LPA',
+      skillSet: ['Python', 'Machine Learning', 'TensorFlow', 'SQL'],
+      location: 'Hyderabad',
+      resumeScore: 88,
+      applications: 6,
+      offers: 3,
+      profileDetails: {
+        rollNumber: 'CS2020004',
+        dateOfBirth: '2001-03-25',
+        address: '321 HITEC City, Hyderabad',
+        fatherName: 'Ravi Reddy',
+        motherName: 'Lakshmi Reddy',
+        emergencyContact: '+91-9876543223'
+      },
+      academicDetails: {
+        tenthPercentage: 88.5,
+        twelfthPercentage: 90.0,
+        backlogs: 0,
+        projects: [],
+        internships: [],
+        certifications: []
+      },
+      placementHistory: []
+    },
+    {
+      id: 5,
+      name: 'Vikash Kumar',
+      email: 'vikash.kumar@example.com',
+      phone: '+91-9876543214',
+      branch: 'Mechanical',
+      year: '4th Year',
+      cgpa: 7.5,
+      placementStatus: 'Not Placed',
+      company: null,
+      package: null,
+      skillSet: ['AutoCAD', 'SolidWorks', 'ANSYS', 'Project Management'],
+      location: 'Chennai',
+      resumeScore: 72,
+      applications: 15,
+      offers: 0,
+      profileDetails: {
+        rollNumber: 'ME2020005',
+        dateOfBirth: '2001-07-18',
+        address: '654 Engineering Hub, Chennai',
+        fatherName: 'Suresh Kumar',
+        motherName: 'Anita Kumar',
+        emergencyContact: '+91-9876543224'
+      },
+      academicDetails: {
+        tenthPercentage: 78.0,
+        twelfthPercentage: 80.5,
+        backlogs: 2,
+        projects: [],
+        internships: [],
+        certifications: []
+      },
+      placementHistory: []
+    }
+  ]);
 
   const handleExportData = () => {
     toast({
@@ -210,7 +410,7 @@ const Students = () => {
     setBulkActionOpen(false);
   };
 
-  const handleBulkStatusUpdate = async (newStatus: string) => {
+  const handleBulkStatusUpdate = (newStatus: string) => {
     if (selectedStudents.size === 0) {
       toast({
         title: "No Students Selected",
@@ -220,32 +420,24 @@ const Students = () => {
       return;
     }
 
-    try {
-      const updates = Array.from(selectedStudents).map(studentId => ({
-        id: studentId,
-        data: { placementStatus: newStatus as any }
-      }));
+    setStudents(prevStudents => 
+      prevStudents.map(student => 
+        selectedStudents.has(student.id)
+          ? { ...student, placementStatus: newStatus }
+          : student
+      )
+    );
 
-      await StudentService.bulkUpdateStudents(updates);
+    toast({
+      title: "Status Updated",
+      description: `${selectedStudents.size} students' status updated to ${newStatus}.`,
+    });
 
-      toast({
-        title: "Status Updated",
-        description: `${selectedStudents.size} students' status updated to ${newStatus}.`,
-      });
-
-      setSelectedStudents(new Set());
-      setBulkActionOpen(false);
-    } catch (error) {
-      console.error('Error updating student status:', error);
-      toast({
-        title: "Error Updating Status",
-        description: "Failed to update student status. Please try again.",
-        variant: "destructive",
-      });
-    }
+    setSelectedStudents(new Set());
+    setBulkActionOpen(false);
   };
 
-  const handleSelectStudent = (studentId: string, isSelected: boolean) => {
+  const handleSelectStudent = (studentId: number, isSelected: boolean) => {
     const newSelected = new Set(selectedStudents);
     if (isSelected) {
       newSelected.add(studentId);
@@ -271,12 +463,12 @@ const Students = () => {
     });
   };
 
-  const handleViewProfile = (student: Student) => {
+  const handleViewProfile = (student: any) => {
     setSelectedStudent(student);
     setStudentProfileOpen(true);
   };
 
-  const handleDownloadResume = (studentId: string, studentName: string) => {
+  const handleDownloadResume = (studentId: number, studentName: string) => {
     toast({
       title: "Download Resume",
       description: `Downloading ${studentName}'s resume...`,
@@ -311,11 +503,11 @@ In a real application, this would download the actual PDF resume.
     }, 1000);
   };
 
-  const handleUpdateStudent = (updatedStudent: Student) => {
+  const handleUpdateStudent = (updatedStudent: any) => {
     // Removed for TPO - no edit access
   };
 
-  const handleEditStudent = (student: Student) => {
+  const handleEditStudent = (student: any) => {
     // Removed for TPO - no edit access
     toast({
       title: "Access Restricted",
@@ -388,18 +580,25 @@ In a real application, this would download the actual PDF resume.
     });
   }, [students, searchTerm, selectedBranch, selectedYear, selectedStatus, selectedCGPA]);
 
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading students...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Placed': return 'bg-secondary text-secondary-foreground';
+      case 'In Process': return 'bg-accent text-accent-foreground';
+      case 'Applying': return 'bg-primary text-primary-foreground';
+      case 'Not Placed': return 'bg-muted text-muted-foreground';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Placed': return <CheckCircle className="h-4 w-4" />;
+      case 'In Process': return <Clock className="h-4 w-4" />;
+      case 'Applying': return <Users className="h-4 w-4" />;
+      case 'Not Placed': return <XCircle className="h-4 w-4" />;
+      default: return <Users className="h-4 w-4" />;
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -428,10 +627,10 @@ In a real application, this would download the actual PDF resume.
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-3xl font-bold">{students.length}</p>
+                <p className="text-3xl font-bold">420</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Users className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -442,12 +641,13 @@ In a real application, this would download the actual PDF resume.
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Placed</p>
-                <p className="text-3xl font-bold">{students.filter(s => s.placementStatus === 'Placed').length}</p>
+                <p className="text-3xl font-bold">287</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-secondary" />
               </div>
             </div>
+            <p className="text-xs text-secondary mt-1">68% placement rate</p>
           </CardContent>
         </Card>
 
@@ -456,10 +656,10 @@ In a real application, this would download the actual PDF resume.
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">In Process</p>
-                <p className="text-3xl font-bold">{students.filter(s => s.placementStatus === 'In Process').length}</p>
+                <p className="text-3xl font-bold">89</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                <Clock className="h-6 w-6 text-yellow-600" />
+              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                <Clock className="h-6 w-6 text-accent" />
               </div>
             </div>
           </CardContent>
@@ -470,10 +670,10 @@ In a real application, this would download the actual PDF resume.
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Applying</p>
-                <p className="text-3xl font-bold">{students.filter(s => s.placementStatus === 'Applying').length}</p>
+                <p className="text-3xl font-bold">44</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Send className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Users className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -483,13 +683,11 @@ In a real application, this would download the actual PDF resume.
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Placement Rate</p>
-                <p className="text-3xl font-bold">
-                  {students.length > 0 ? ((students.filter(s => s.placementStatus === 'Placed').length / students.length) * 100).toFixed(1) : 0}%
-                </p>
+                <p className="text-sm text-muted-foreground">Avg Package</p>
+                <p className="text-3xl font-bold">₹8.2L</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                <Star className="h-6 w-6 text-purple-600" />
+              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                <Star className="h-6 w-6 text-secondary" />
               </div>
             </div>
           </CardContent>
@@ -499,76 +697,92 @@ In a real application, this would download the actual PDF resume.
       {/* Filters and Search */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search students by name, email, branch, or skills..." 
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="select-all"
+                  checked={selectedStudents.size === filteredStudents.length && filteredStudents.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <Label htmlFor="select-all" className="text-sm font-medium">
+                  Select All ({filteredStudents.length})
+                </Label>
+              </div>
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search students by name, email, branch, or skills..." 
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </div>
             </div>
-
-            {/* Filters */}
-            <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex gap-2 items-center">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4" />
-                <span className="text-sm font-medium">Filters:</span>
+                <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map(branch => (
+                      <SelectItem key={branch} value={branch}>
+                        {branch === 'all' ? 'All Branches' : branch}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {branches.map(branch => (
-                    <SelectItem key={branch} value={branch}>
-                      {branch === 'all' ? 'All Branches' : branch}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <GraduationCap className="w-4 h-4" />
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map(year => (
+                      <SelectItem key={year} value={year}>
+                        {year === 'all' ? 'All Years' : year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(year => (
-                    <SelectItem key={year} value={year}>
-                      {year === 'all' ? 'All Years' : year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuses.map(status => (
+                      <SelectItem key={status} value={status}>
+                        {status === 'all' ? 'All Statuses' : status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statuses.map(status => (
-                    <SelectItem key={status} value={status}>
-                      {status === 'all' ? 'All Status' : status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedCGPA} onValueChange={setSelectedCGPA}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="CGPA" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cgpaRanges.map(range => (
-                    <SelectItem key={range} value={range}>
-                      {range === 'all' ? 'All CGPA' : range}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                <Select value={selectedCGPA} onValueChange={setSelectedCGPA}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="CGPA" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cgpaRanges.map(range => (
+                      <SelectItem key={range} value={range}>
+                        {range === 'all' ? 'All CGPA' : range}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <Button 
                 variant="outline" 
@@ -585,139 +799,135 @@ In a real application, this would download the actual PDF resume.
                 Clear
               </Button>
             </div>
-
-            {/* Select All Checkbox */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="select-all"
-                checked={selectedStudents.size === filteredStudents.length && filteredStudents.length > 0}
-                onCheckedChange={handleSelectAll}
-              />
-              <Label htmlFor="select-all" className="text-sm">
-                Select All ({filteredStudents.length})
-              </Label>
-            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Students List */}
-      <div className="grid gap-4">
+      <div className="space-y-4">
         {filteredStudents.length === 0 ? (
           <Card>
-            <CardContent className="py-20">
-              <div className="text-center">
-                <GraduationCap className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
-                <p className="mt-1 text-sm text-gray-500">
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">No students found</h3>
+                <p className="text-sm text-muted-foreground">
                   Try adjusting your search or filter criteria.
                 </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-4"
+                  onClick={() => {
+                    setSelectedBranch('all');
+                    setSelectedYear('all');
+                    setSelectedStatus('all');
+                    setSelectedCGPA('all');
+                    setSearchTerm('');
+                  }}
+                >
+                  Clear all filters
+                </Button>
               </div>
             </CardContent>
           </Card>
         ) : (
           filteredStudents.map((student) => (
-            <Card key={student.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <Checkbox
-                      checked={selectedStudents.has(student.id)}
-                      onCheckedChange={(checked) => handleSelectStudent(student.id, checked === true)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-lg font-semibold text-primary">
-                            {student.name.charAt(0).toUpperCase()}
-                          </span>
+          <Card key={student.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <Checkbox
+                    checked={selectedStudents.has(student.id)}
+                    onCheckedChange={(checked) => handleSelectStudent(student.id, checked as boolean)}
+                  />
+                  <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl">
+                    {student.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-bold text-lg">{student.name}</h3>
+                      <Badge className={getStatusColor(student.placementStatus)}>
+                        {getStatusIcon(student.placementStatus)}
+                        <span className="ml-1">{student.placementStatus}</span>
+                      </Badge>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-4 text-sm text-muted-foreground">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {student.email}
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{student.name}</h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {student.email}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {student.phone}
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {student.phone}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {student.location}
                         </div>
                       </div>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-4 text-sm">
-                            <span><strong>Branch:</strong> {student.branch}</span>
-                            <span><strong>Year:</strong> {student.year}</span>
-                            <span><strong>CGPA:</strong> {student.cgpa}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm"><strong>Status:</strong></span>
-                            <Badge 
-                              variant={
-                                student.placementStatus === 'Placed' ? 'default' :
-                                student.placementStatus === 'In Process' ? 'secondary' :
-                                student.placementStatus === 'Applying' ? 'outline' :
-                                'destructive'
-                              }
-                            >
-                              {student.placementStatus}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Applications: {student.applications} | Offers: {student.offers}
-                          </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1">
+                          <GraduationCap className="h-3 w-3" />
+                          {student.branch} - {student.year}
                         </div>
-                        <div className="space-y-1">
-                          {student.company && (
-                            <div className="font-medium text-primary">
-                              {student.company} - {student.package}
-                            </div>
-                          )}
-                          <div>Resume Score: <span className="font-medium">{student.resumeScore}%</span></div>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {student.skillSet.slice(0, 3).map((skill, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {student.skillSet.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{student.skillSet.length - 3} more
-                              </Badge>
-                            )}
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3" />
+                          CGPA: {student.cgpa}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          Applications: {student.applications} | Offers: {student.offers}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        {student.company && (
+                          <div className="font-medium text-primary">
+                            {student.company} - {student.package}
                           </div>
+                        )}
+                        <div>Resume Score: <span className="font-medium">{student.resumeScore}%</span></div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {student.skillSet.slice(0, 3).map((skill, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
+                          {student.skillSet.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{student.skillSet.length - 3} more
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button size="sm" variant="outline" className="gap-1" onClick={() => handleViewProfile(student)}>
-                      <Eye className="h-3 w-3" />
-                      View Profile
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1" onClick={() => handleDownloadResume(student.id, student.name)}>
-                      <Download className="h-3 w-3" />
-                      Resume
-                    </Button>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+                <div className="flex items-center gap-2 ml-4">
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => handleViewProfile(student)}>
+                    <Eye className="h-3 w-3" />
+                    View Profile
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => handleDownloadResume(student.id, student.name)}>
+                    <Download className="h-3 w-3" />
+                    Resume
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )))}
       </div>
 
-      {/* Student Profile Modal */}
-      <StudentProfileModal
-        open={studentProfileOpen}
+      {/* Modals */}
+      <StudentProfileModal 
+        open={studentProfileOpen} 
         onOpenChange={setStudentProfileOpen}
         student={selectedStudent}
       />
 
-      {/* Bulk Action Dialog */}
+      {/* Bulk Actions Dialog */}
       <Dialog open={bulkActionOpen} onOpenChange={setBulkActionOpen}>
         <DialogContent>
           <DialogHeader>

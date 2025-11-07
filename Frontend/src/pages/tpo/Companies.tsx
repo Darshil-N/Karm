@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { CompanyService, Company } from '@/services/firebaseService';
 import { 
   Plus,
   Search,
@@ -18,17 +20,106 @@ import {
   Briefcase,
   Edit,
   Eye,
-  Star
+  Star,
+  X
 } from 'lucide-react';
 import AddCompanyModal from '@/components/modals/AddCompanyModal';
+import CompanyDetailsModal from '@/components/modals/CompanyDetailsModal';
+import EditCompanyModal from '@/components/modals/EditCompanyModal';
+import CreateDriveModal from '@/components/modals/CreateDriveModal';
 
 const Companies = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
+  const [selectedTier, setSelectedTier] = useState<string>('all');
+  const [selectedLocation, setSelectedLocation] = useState<string>('all');
   const [addCompanyOpen, setAddCompanyOpen] = useState(false);
+  const [companyDetailsOpen, setCompanyDetailsOpen] = useState(false);
+  const [editCompanyOpen, setEditCompanyOpen] = useState(false);
+  const [createDriveOpen, setCreateDriveOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load companies from Firebase on component mount
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        setLoading(true);
+        const companiesData = await CompanyService.getAllCompanies();
+        setCompanies(companiesData);
+      } catch (error) {
+        console.error('Error loading companies:', error);
+        toast({
+          title: "Error Loading Companies",
+          description: "Failed to load companies. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCompanies();
+
+    // Subscribe to real-time updates
+    const unsubscribe = CompanyService.subscribeToCompanies((companiesData) => {
+      setCompanies(companiesData);
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
+
+  // Get unique values for filter dropdowns
+  const industries = useMemo(() => {
+    const uniqueIndustries = [...new Set(companies.map(c => c.industry).filter(Boolean))];
+    return ['all', ...uniqueIndustries];
+  }, [companies]);
+
+  const tiers = useMemo(() => {
+    const uniqueTiers = [...new Set(companies.map(c => c.tier).filter(Boolean))];
+    return ['all', ...uniqueTiers];
+  }, [companies]);
+
+  const locations = useMemo(() => {
+    const uniqueLocations = [...new Set(companies.map(c => c.location?.split(',')[0]?.trim()).filter(Boolean))]; // Get city part
+    return ['all', ...uniqueLocations];
+  }, [companies]);
+
+  // Filter companies based on search and filters
+  const filteredCompanies = useMemo(() => {
+    return companies.filter(company => {
+      // Search filter
+      const matchesSearch = searchTerm === '' || 
+        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        company.location.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Industry filter
+      const matchesIndustry = selectedIndustry === 'all' || company.industry === selectedIndustry;
+
+      // Tier filter
+      const matchesTier = selectedTier === 'all' || company.tier === selectedTier;
+
+      // Location filter (match city part)
+      const matchesLocation = selectedLocation === 'all' || 
+        company.location.split(',')[0].trim() === selectedLocation;
+
+      return matchesSearch && matchesIndustry && matchesTier && matchesLocation;
+    });
+  }, [companies, searchTerm, selectedIndustry, selectedTier, selectedLocation]);
 
   const handleAddNewCompany = () => {
     setAddCompanyOpen(true);
+  };
+
+  const handleCompanyAdded = (newCompany: any) => {
+    setCompanies(prevCompanies => [...prevCompanies, newCompany]);
+    toast({
+      title: "Company Added",
+      description: `${newCompany.name} has been successfully added to your companies list.`,
+    });
   };
 
   const handleSearch = (value: string) => {
@@ -39,141 +130,90 @@ const Companies = () => {
     });
   };
 
-  const handleFilter = (filterType: string) => {
-    toast({
-      title: "Filter Applied",
-      description: `Filtering by: ${filterType}`,
-    });
-  };
-
-  const handleViewCompany = (companyId: number, companyName: string) => {
-    toast({
-      title: "View Company",
-      description: `Opening ${companyName} profile...`,
-    });
-  };
-
-  const handleEditCompany = (companyId: number, companyName: string) => {
-    toast({
-      title: "Edit Company",
-      description: `Opening ${companyName} editor...`,
-    });
-  };
-
-  const handleCreateDrive = (companyId: number, companyName: string) => {
-    toast({
-      title: "Create Drive",
-      description: `Creating new drive for ${companyName}...`,
-    });
-  };
-
-  const companies = [
-    {
-      id: 1,
-      name: 'Google',
-      logo: 'G',
-      industry: 'Technology',
-      location: 'Mountain View, CA',
-      tier: 'Tier 1',
-      rating: 4.8,
-      contact: {
-        email: 'hr@google.com',
-        phone: '+1-650-253-0000',
-        website: 'www.google.com'
-      },
-      stats: {
-        totalDrives: 8,
-        totalHires: 45,
-        avgSalary: '₹24 LPA',
-        lastVisit: '2024-10-15'
-      },
-      description: 'Leading technology company focused on internet-related services and products.'
-    },
-    {
-      id: 2,
-      name: 'Microsoft',
-      logo: 'M',
-      industry: 'Technology',
-      location: 'Redmond, WA',
-      tier: 'Tier 1',
-      rating: 4.7,
-      contact: {
-        email: 'careers@microsoft.com',
-        phone: '+1-425-882-8080',
-        website: 'www.microsoft.com'
-      },
-      stats: {
-        totalDrives: 6,
-        totalHires: 38,
-        avgSalary: '₹28 LPA',
-        lastVisit: '2024-09-20'
-      },
-      description: 'Multinational technology company developing computer software, consumer electronics, and services.'
-    },
-    {
-      id: 3,
-      name: 'Amazon',
-      logo: 'A',
-      industry: 'E-commerce',
-      location: 'Seattle, WA',
-      tier: 'Tier 1',
-      rating: 4.5,
-      contact: {
-        email: 'university@amazon.com',
-        phone: '+1-206-266-1000',
-        website: 'www.amazon.com'
-      },
-      stats: {
-        totalDrives: 10,
-        totalHires: 52,
-        avgSalary: '₹22 LPA',
-        lastVisit: '2024-11-01'
-      },
-      description: 'American multinational technology company focusing on e-commerce and cloud computing.'
-    },
-    {
-      id: 4,
-      name: 'TCS',
-      logo: 'T',
-      industry: 'IT Services',
-      location: 'Mumbai, India',
-      tier: 'Tier 2',
-      rating: 4.1,
-      contact: {
-        email: 'recruitment@tcs.com',
-        phone: '+91-22-6778-9595',
-        website: 'www.tcs.com'
-      },
-      stats: {
-        totalDrives: 15,
-        totalHires: 89,
-        avgSalary: '₹3.5 LPA',
-        lastVisit: '2024-10-30'
-      },
-      description: 'Indian multinational information technology services and consulting company.'
-    },
-    {
-      id: 5,
-      name: 'Infosys',
-      logo: 'I',
-      industry: 'IT Services',
-      location: 'Bangalore, India',
-      tier: 'Tier 2',
-      rating: 4.2,
-      contact: {
-        email: 'campushiring@infosys.com',
-        phone: '+91-80-2852-0261',
-        website: 'www.infosys.com'
-      },
-      stats: {
-        totalDrives: 12,
-        totalHires: 76,
-        avgSalary: '₹4.2 LPA',
-        lastVisit: '2024-11-05'
-      },
-      description: 'Indian multinational corporation providing business consulting and IT services.'
+  const handleViewCompany = (companyId: string, companyName: string) => {
+    const company = companies.find(c => c.id === companyId);
+    if (company) {
+      setSelectedCompany(company);
+      setCompanyDetailsOpen(true);
     }
-  ];
+  };
+
+  const handleEditCompany = (companyId: string, companyName: string) => {
+    const company = companies.find(c => c.id === companyId);
+    if (company) {
+      setSelectedCompany(company);
+      setEditCompanyOpen(true);
+    }
+  };
+
+  const handleCreateDrive = (companyId: string, companyName: string) => {
+    const company = companies.find(c => c.id === companyId);
+    if (company) {
+      setSelectedCompany(company);
+      setCreateDriveOpen(true);
+    }
+  };
+
+  const handleCompanyUpdated = (updatedCompanyData: any) => {
+    if (selectedCompany) {
+      // Update the company in the companies array
+      setCompanies(prev => prev.map(company => 
+        company.id === selectedCompany.id 
+          ? {
+              ...company,
+              name: updatedCompanyData.name,
+              industry: updatedCompanyData.industry,
+              tier: updatedCompanyData.tier,
+              description: updatedCompanyData.description,
+              location: updatedCompanyData.location,
+              contact: {
+                ...company.contact,
+                email: updatedCompanyData.contactEmail,
+                phone: updatedCompanyData.contactPhone,
+                website: updatedCompanyData.website,
+              },
+              stats: {
+                ...company.stats,
+                avgSalary: updatedCompanyData.avgSalary,
+              }
+            }
+          : company
+      ));
+
+      // Update selectedCompany to reflect changes in other modals
+      setSelectedCompany(prev => ({
+        ...prev,
+        name: updatedCompanyData.name,
+        industry: updatedCompanyData.industry,
+        tier: updatedCompanyData.tier,
+        description: updatedCompanyData.description,
+        location: updatedCompanyData.location,
+        contact: {
+          ...prev.contact,
+          email: updatedCompanyData.contactEmail,
+          phone: updatedCompanyData.contactPhone,
+          website: updatedCompanyData.website,
+        },
+        stats: {
+          ...prev.stats,
+          avgSalary: updatedCompanyData.avgSalary,
+        }
+      }));
+
+      toast({
+        title: "Company Updated",
+        description: `${updatedCompanyData.name} has been updated successfully.`,
+      });
+    }
+  };
+
+  const handleDriveCreated = () => {
+    toast({
+      title: "Drive Created",
+      description: "New placement drive has been created successfully.",
+    });
+    setCreateDriveOpen(false);
+  };
 
   const getTierColor = (tier: string) => {
     switch (tier) {
@@ -183,6 +223,19 @@ const Companies = () => {
       default: return 'bg-muted text-muted-foreground';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading companies...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -270,18 +323,67 @@ const Companies = () => {
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => handleFilter('Industry')}>
-                <Filter className="h-4 w-4" />
-                Industry
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => handleFilter('Tier')}>
-                <Star className="h-4 w-4" />
-                Tier
-              </Button>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => handleFilter('Location')}>
-                <MapPin className="h-4 w-4" />
-                Location
+            <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                <Select value={selectedIndustry} onValueChange={setSelectedIndustry}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Industry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {industries.map(industry => (
+                      <SelectItem key={industry} value={industry}>
+                        {industry === 'all' ? 'All Industries' : industry}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                <Select value={selectedTier} onValueChange={setSelectedTier}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiers.map(tier => (
+                      <SelectItem key={tier} value={tier}>
+                        {tier === 'all' ? 'All Tiers' : tier}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(location => (
+                      <SelectItem key={location} value={location}>
+                        {location === 'all' ? 'All Locations' : location}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setSelectedIndustry('all');
+                  setSelectedLocation('all');
+                  setSelectedTier('all');
+                }}
+                className="flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Clear
               </Button>
             </div>
           </div>
@@ -290,7 +392,7 @@ const Companies = () => {
 
       {/* Companies Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {companies.map((company) => (
+        {filteredCompanies.map((company) => (
           <Card key={company.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
               {/* Company Header */}
@@ -374,10 +476,30 @@ const Companies = () => {
         ))}
       </div>
 
-      {/* Modal */}
-      <AddCompanyModal 
-        open={addCompanyOpen} 
-        onOpenChange={setAddCompanyOpen} 
+      {/* Modals */}
+      <AddCompanyModal
+        open={addCompanyOpen}
+        onOpenChange={setAddCompanyOpen}
+        onCompanyAdded={handleCompanyAdded}
+        existingCompanies={companies}
+      />      <CompanyDetailsModal
+        open={companyDetailsOpen}
+        onOpenChange={setCompanyDetailsOpen}
+        company={selectedCompany}
+      />
+      
+      <EditCompanyModal
+        open={editCompanyOpen}
+        onOpenChange={setEditCompanyOpen}
+        company={selectedCompany}
+        onCompanyUpdated={handleCompanyUpdated}
+      />
+      
+      <CreateDriveModal
+        open={createDriveOpen}
+        onOpenChange={setCreateDriveOpen}
+        onDriveCreated={handleDriveCreated}
+        selectedCompany={selectedCompany}
       />
     </div>
   );
