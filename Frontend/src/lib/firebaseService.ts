@@ -45,8 +45,13 @@ export interface CollegeData {
 // Auth Functions
 export const loginWithEmail = async (email: string, password: string): Promise<UserData | null> => {
   try {
+    console.log('Attempting login with email:', email);
+    console.log('Firebase auth instance:', auth);
+    
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
+    
+    console.log('Login successful, user:', user);
     
     // Get user data from Firestore
     const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -62,8 +67,24 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
     } else {
       throw new Error('User data not found');
     }
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (error: any) {
+    console.error('Login error details:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    
+    // Provide user-friendly error messages
+    if (error.code === 'auth/network-request-failed') {
+      throw new Error('Network connection failed. Please check your internet connection and try again.');
+    } else if (error.code === 'auth/user-not-found') {
+      throw new Error('No account found with this email address.');
+    } else if (error.code === 'auth/wrong-password') {
+      throw new Error('Incorrect password.');
+    } else if (error.code === 'auth/invalid-email') {
+      throw new Error('Invalid email address.');
+    } else if (error.code === 'auth/too-many-requests') {
+      throw new Error('Too many failed login attempts. Please try again later.');
+    }
+    
     throw error;
   }
 };

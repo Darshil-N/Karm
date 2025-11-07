@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -13,6 +14,7 @@ import { Shield } from 'lucide-react';
 const AuthoritySignup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -41,20 +43,25 @@ const AuthoritySignup = () => {
       const user = userCredential.user;
       
       // Create authority user document
-      await setDoc(doc(db, 'users', user.uid), {
+      const userData = {
         uid: user.uid,
         email: formData.email,
         name: formData.name,
-        role: 'authority',
+        role: 'authority' as const,
         isApproved: true, // Authority is automatically approved
         createdAt: new Date()
-      });
+      };
+      
+      await setDoc(doc(db, 'users', user.uid), userData);
+      
+      // Log the user in automatically
+      login(userData);
       
       toast({
         title: "Authority Account Created",
-        description: "You can now login with your credentials.",
+        description: "Welcome! You are now logged in as authority.",
       });
-      navigate('/login');
+      navigate('/admin/verify');
     } catch (error: any) {
       toast({
         title: "Registration Failed",
