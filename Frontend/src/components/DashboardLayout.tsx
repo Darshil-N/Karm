@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, Search, LogOut, User, Settings } from 'lucide-react';
+import { Search, LogOut, User, Settings } from 'lucide-react';
+import NotificationDropdown from '@/components/NotificationDropdown';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,10 +71,7 @@ const DashboardLayout = ({ children, sidebar }: DashboardLayoutProps) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </Button>
+            <NotificationDropdown />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
