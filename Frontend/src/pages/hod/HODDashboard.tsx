@@ -30,52 +30,52 @@ import {
 
 const HODSidebar = ({ pendingCount = 0 }) => (
   <div className="p-6 space-y-6">
-    <div className="mb-8">
-      <h2 className="text-xl font-bold">Project Nexus</h2>
-      <p className="text-sm text-muted-foreground">HOD Portal</p>
+    <div className="mb-8 animate-slide-in-left">
+      <h2 className="text-xl font-bold text-mist-white">Project Nexus</h2>
+      <p className="text-sm text-cyber-lime/80">HOD Portal</p>
     </div>
     
     <nav className="space-y-2">
       <NavLink
         to="/hod/dashboard"
         end
-        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm hover:bg-muted transition-colors"
-        activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-mist-white hover:bg-electric-purple/20 hover:text-cyber-lime border border-transparent hover:border-cyber-lime/30 group animate-slide-in-left stagger-delay-1"
+        activeClassName="bg-electric-purple/30 text-cyber-lime border-cyber-lime/50"
       >
-        <LayoutDashboard className="h-5 w-5" />
+        <LayoutDashboard className="h-5 w-5 group-hover:icon-wiggle" />
         Dashboard
       </NavLink>
       <NavLink
         to="/hod/students"
-        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm hover:bg-muted transition-colors"
-        activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-mist-white hover:bg-electric-purple/20 hover:text-cyber-lime border border-transparent hover:border-cyber-lime/30 group animate-slide-in-left stagger-delay-2"
+        activeClassName="bg-electric-purple/30 text-cyber-lime border-cyber-lime/50"
       >
-        <Users className="h-5 w-5" />
+        <Users className="h-5 w-5 group-hover:icon-wiggle" />
         Manage Students
       </NavLink>
       <NavLink
         to="/hod/approvals"
-        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm hover:bg-muted transition-colors"
-        activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-mist-white hover:bg-electric-purple/20 hover:text-cyber-lime border border-transparent hover:border-cyber-lime/30 group animate-slide-in-left stagger-delay-3"
+        activeClassName="bg-electric-purple/30 text-cyber-lime border-cyber-lime/50"
       >
-        <CheckCircle className="h-5 w-5" />
+        <CheckCircle className="h-5 w-5 group-hover:icon-wiggle" />
         Pending Approvals
-        <Badge variant="destructive" className="ml-auto">{pendingCount}</Badge>
+        <Badge variant="destructive" className="ml-auto bg-red-500/80 hover:bg-red-500 animate-pulse-slow">{pendingCount}</Badge>
       </NavLink>
       <NavLink
         to="/hod/reports"
-        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm hover:bg-muted transition-colors"
-        activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-mist-white hover:bg-electric-purple/20 hover:text-cyber-lime border border-transparent hover:border-cyber-lime/30 group animate-slide-in-left stagger-delay-4"
+        activeClassName="bg-electric-purple/30 text-cyber-lime border-cyber-lime/50"
       >
-        <FileText className="h-5 w-5" />
+        <FileText className="h-5 w-5 group-hover:icon-wiggle" />
         Reports
       </NavLink>
       <NavLink
         to="/hod/results"
-        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm hover:bg-muted transition-colors"
-        activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-mist-white hover:bg-electric-purple/20 hover:text-cyber-lime border border-transparent hover:border-cyber-lime/30 group animate-slide-in-left stagger-delay-5"
+        activeClassName="bg-electric-purple/30 text-cyber-lime border-cyber-lime/50"
       >
-        <GraduationCap className="h-5 w-5" />
+        <GraduationCap className="h-5 w-5 group-hover:icon-wiggle" />
         Results
       </NavLink>
     </nav>
@@ -103,68 +103,68 @@ const HODDashboardContent = ({ pendingStudents, setPendingStudents }) => {
     });
   };
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Department Overview</h1>
+      <div className="slide-in-up">
+        <h1 className="responsive-text-3xl font-bold mb-2 text-foreground text-shimmer">Department Overview</h1>
         <p className="text-muted-foreground">Computer Science & Engineering</p>
       </div>
 
       {/* Key Stats */}
-      <div className="grid md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
+      <div className="responsive-grid">
+        <Card className="cyber-card circuit-pattern hover-lift stagger-fade">
+          <CardContent className="responsive-padding pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-3xl font-bold">420</p>
+                <p className="responsive-text-3xl font-bold text-foreground">420</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-electric flex items-center justify-center cyber-pulse hover-tilt">
                 <Users className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="cyber-card circuit-pattern hover-lift stagger-fade">
+          <CardContent className="responsive-padding pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Placed</p>
-                <p className="text-3xl font-bold">287</p>
+                <p className="responsive-text-3xl font-bold text-foreground">287</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
-                <Award className="h-6 w-6 text-secondary" />
+              <div className="w-12 h-12 rounded-full bg-gradient-lime flex items-center justify-center hover-tilt">
+                <Award className="h-6 w-6 text-primary" />
               </div>
             </div>
-            <p className="text-xs text-secondary mt-2">68% placement rate</p>
+            <p className="text-xs text-accent mt-2">68% placement rate</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="cyber-card circuit-pattern hover-lift stagger-fade">
+          <CardContent className="responsive-padding pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Avg. Package</p>
-                <p className="text-3xl font-bold">₹12L</p>
+                <p className="responsive-text-3xl font-bold text-foreground">₹12L</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-accent" />
+              <div className="w-12 h-12 rounded-full bg-gradient-hero flex items-center justify-center hover-tilt">
+                <TrendingUp className="h-6 w-6 text-foreground" />
               </div>
             </div>
-            <p className="text-xs text-secondary mt-2">+15% from last year</p>
+            <p className="text-xs text-accent mt-2">+15% from last year</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="cyber-card circuit-pattern hover-lift stagger-fade">
+          <CardContent className="responsive-padding pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Pending Approvals</p>
-                <p className="text-3xl font-bold">{pendingStudents.length}</p>
+                <p className="responsive-text-3xl font-bold text-foreground">{pendingStudents.length}</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-destructive" />
+              <div className="w-12 h-12 rounded-full bg-gradient-electric flex items-center justify-center hover-tilt">
+                <CheckCircle className="h-6 w-6 text-primary" />
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-2">Requires attention</p>
@@ -173,24 +173,24 @@ const HODDashboardContent = ({ pendingStudents, setPendingStudents }) => {
       </div>
 
       {/* Pending Student Approvals */}
-      <Card>
+      <Card className="cyber-card circuit-pattern hover-lift fade-in">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex items-center justify-between text-foreground responsive-text-xl">
             <span>Pending Student Approvals</span>
-            <Badge variant="destructive">{pendingStudents.length} Pending</Badge>
+            <Badge variant="destructive" className="cyber-pulse">{pendingStudents.length} Pending</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {pendingStudents.length > 0 ? (
-              pendingStudents.map((student) => (
-                <div key={student.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                  <div>
-                    <p className="font-medium">{student.name}</p>
+              pendingStudents.map((student, index) => (
+                <div key={student.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-input rounded-lg border border-border hover:border-accent transition-colors hover-lift stagger-fade gap-4`} style={{animationDelay: `${index * 0.1}s`}}>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">{student.name}</p>
                     <p className="text-sm text-muted-foreground">{student.email}</p>
                     <p className="text-xs text-muted-foreground mt-1">CGPA: {student.cgpa} • Applied {student.date}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-shrink-0">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button 

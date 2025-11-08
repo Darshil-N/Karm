@@ -32,15 +32,15 @@ import { auth } from '@/lib/firebase';
 const AdminSidebar = () => (
   <div className="p-6 space-y-6">
     <div className="mb-8">
-      <h2 className="text-xl font-bold">Project Nexus</h2>
+      <h2 className="text-xl font-bold text-foreground">Project Nexus</h2>
       <p className="text-sm text-muted-foreground">Authority Portal</p>
     </div>
     
     <nav className="space-y-2">
       <NavLink
         to="/admin/verify"
-        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm hover:bg-muted transition-colors"
-        activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors"
+        activeClassName="bg-accent text-accent-foreground hover:bg-accent"
       >
         <Shield className="h-5 w-5" />
         Verify Colleges

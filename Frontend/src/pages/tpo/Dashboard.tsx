@@ -137,60 +137,71 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Welcome Banner */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-slide-in-top">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Placement Dashboard</h1>
-          <p className="text-muted-foreground">Manage recruitment drives and student placements</p>
+          <h1 className="responsive-text-3xl font-bold mb-2 text-mist-white animate-text-shimmer bg-gradient-to-r from-cyber-lime via-electric-purple to-cyber-lime bg-clip-text">
+            Placement Dashboard
+          </h1>
+          <p className="text-mist-white/80">Manage recruitment drives and student placements</p>
         </div>
-        <Button className="gap-2" onClick={handleCreateNewDrive}>
-          <Plus className="h-4 w-4" />
+        <Button 
+          className="gap-2 bg-gradient-cyber text-deep-space hover:bg-gradient-cyber/90 btn-wave hover-scale animate-slide-in-right"
+          onClick={handleCreateNewDrive}
+        >
+          <Plus className="h-4 w-4 icon-wiggle" />
           Create New Drive
         </Button>
       </div>
 
       {/* Key Stats */}
-      <div className="grid md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
+      <div className="responsive-grid">
+        <Card className="cyber-card circuit-pattern hover-glow-intense animate-fade-in stagger-delay-1 group">
+          <CardContent className="responsive-padding pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active Drives</p>
-                <p className="text-3xl font-bold">{loading ? '-' : stats.active}</p>
+                <p className="text-sm text-cyber-lime/80">Active Drives</p>
+                <p className="responsive-text-3xl font-bold text-mist-white group-hover:text-cyber-lime transition-colors duration-300 animate-pulse-slow">
+                  {loading ? '-' : stats.active}
+                </p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Briefcase className="h-6 w-6 text-primary" />
+              <div className="w-12 h-12 rounded-full bg-cyber-lime/20 flex items-center justify-center group-hover:animate-bounce-gentle">
+                <Briefcase className="h-6 w-6 text-cyber-lime group-hover:icon-wiggle" />
               </div>
             </div>
-            <p className="text-xs text-secondary mt-2">Currently accepting applications</p>
+            <p className="text-xs text-electric-purple mt-2">Currently accepting applications</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="cyber-card circuit-pattern hover-glow-intense animate-fade-in stagger-delay-2 group">
+          <CardContent className="responsive-padding pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Companies</p>
-                <p className="text-3xl font-bold">{loading ? '-' : stats.companies}</p>
+                <p className="text-sm text-cyber-lime/80">Total Companies</p>
+                <p className="responsive-text-3xl font-bold text-mist-white group-hover:text-electric-purple transition-colors duration-300 animate-pulse-slow">
+                  {loading ? '-' : stats.companies}
+                </p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-secondary" />
+              <div className="w-12 h-12 rounded-full bg-electric-purple/20 flex items-center justify-center group-hover:animate-spin-slow">
+                <Building2 className="h-6 w-6 text-electric-purple group-hover:icon-heartbeat" />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Registered for placement</p>
+            <p className="text-xs text-cyber-lime mt-2">Registered for placement</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="cyber-card circuit-pattern hover-glow-intense animate-fade-in stagger-delay-3 group">
+          <CardContent className="responsive-padding pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Students Placed</p>
-                <p className="text-3xl font-bold">{loading ? '-' : stats.placed}</p>
+                <p className="text-sm text-cyber-lime/80">Students Placed</p>
+                <p className="responsive-text-3xl font-bold text-mist-white group-hover:text-cyber-lime transition-colors duration-300 animate-pulse-slow">
+                  {loading ? '-' : stats.placed}
+                </p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                <Users className="h-6 w-6 text-accent" />
+              <div className="w-12 h-12 rounded-full bg-cyber-lime/20 flex items-center justify-center group-hover:animate-float">
+                <Users className="h-6 w-6 text-cyber-lime group-hover:icon-flash" />
               </div>
             </div>
             <p className="text-xs text-secondary mt-2">This academic year</p>

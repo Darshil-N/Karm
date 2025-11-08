@@ -53,10 +53,11 @@ const App = () => (
     <AuthProvider>
       <NotificationProvider>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-          <Routes>
+          <div className="min-h-screen bg-gradient-to-br from-deep-space via-electric-purple to-deep-space bg-animate-gradient">
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+            <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Landing />} />
             <Route path="/signup-hub" element={<SignupHub />} />
@@ -110,6 +111,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+          </div>
       </TooltipProvider>
     </NotificationProvider>
   </AuthProvider>

@@ -384,9 +384,9 @@ const Reports = () => {
             </Card>
           </div>
 
-          <Card>
+          <Card className="cyber-card circuit-pattern hover-glow-intense animate-fade-in stagger-delay-3 group">
             <CardHeader>
-              <CardTitle>Top Performers</CardTitle>
+              <CardTitle className="text-mist-white group-hover:text-cyber-lime transition-colors duration-300">Top Performers</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -395,20 +395,24 @@ const Reports = () => {
                   { rank: 2, name: 'Sneha Reddy', rollNo: 'CS21B004', cgpa: 9.6, achievements: 'Academic Excellence Award' },
                   { rank: 3, name: 'Rahul Sharma', rollNo: 'CS21B001', cgpa: 9.4, achievements: 'Best Project Award' }
                 ].map((student, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                  <div key={idx} className={`flex items-center justify-between p-4 bg-gradient-to-r from-electric-purple/10 to-cyber-lime/10 border cyber-card-border rounded-lg hover:from-electric-purple/20 hover:to-cyber-lime/20 hover:border-cyber-lime/50 transition-all duration-300 hover-scale-sm animate-slide-in-left stagger-delay-${idx + 1} group`}>
                     <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-deep-space group-hover:animate-bounce-gentle ${
+                        student.rank === 1 ? 'bg-gradient-cyber animate-glow-cycle' : 
+                        student.rank === 2 ? 'bg-electric-purple' : 
+                        'bg-cyber-lime'
+                      }`}>
                         {student.rank}
                       </div>
                       <div>
-                        <p className="font-semibold">{student.name}</p>
-                        <p className="text-sm text-muted-foreground">{student.rollNo}</p>
-                        <p className="text-xs text-muted-foreground">{student.achievements}</p>
+                        <p className="font-semibold text-mist-white group-hover:text-cyber-lime transition-colors duration-300">{student.name}</p>
+                        <p className="text-sm text-electric-purple">{student.rollNo}</p>
+                        <p className="text-xs text-mist-white/70 group-hover:text-mist-white transition-colors duration-300">{student.achievements}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">{student.cgpa}</p>
-                      <p className="text-xs text-muted-foreground">CGPA</p>
+                      <p className="text-2xl font-bold text-cyber-lime group-hover:animate-pulse-slow">{student.cgpa}</p>
+                      <p className="text-xs text-mist-white/60">CGPA</p>
                     </div>
                   </div>
                 ))}

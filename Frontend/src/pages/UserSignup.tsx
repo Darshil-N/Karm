@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { StudentService } from '@/services/firebaseService';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, ArrowLeft, User, Mail, Phone, Lock, Building } from 'lucide-react';
 
 const UserSignup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [colleges, setColleges] = useState<Array<{
     id: string;
     name: string;
@@ -28,6 +29,12 @@ const UserSignup = () => {
     phone: '',
     password: ''
   });
+
+  // Animation trigger
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load approved colleges on component mount
   useEffect(() => {
