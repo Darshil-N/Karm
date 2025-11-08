@@ -24,6 +24,13 @@ export interface UserData {
   name: string;
   role: 'authority' | 'tpo' | 'hod' | 'student';
   isApproved: boolean;
+  approved?: boolean; // New approval field for students
+  profileCompleted?: boolean; // Profile completion status
+  studentId?: string; // Student ID for students
+  university?: string; // University name for students
+  branch?: string; // Branch for students
+  year?: string; // Year for students
+  cgpa?: number; // CGPA for students
   collegeId?: string; // Optional for authority, required for others
   department?: string; // Only for students and HODs
   graduationYear?: string; // Only for students

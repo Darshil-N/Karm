@@ -36,6 +36,14 @@ const Landing = () => {
             >
               Sign Up
             </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="text-lg px-8 py-6"
+              onClick={() => navigate('/check-status')}
+            >
+              Check Application Status
+            </Button>
           </div>
         </div>
       </div>

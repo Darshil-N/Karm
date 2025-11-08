@@ -4,8 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { DriveService, StudentService, ApplicationService } from '@/services/firebaseService';
 import { 
   Search, 
   Filter, 
@@ -20,111 +23,146 @@ import {
   FileText,
   ExternalLink,
   Bookmark,
-  BookmarkCheck
+  BookmarkCheck,
+  Loader2
 } from 'lucide-react';
 
 const PlacementDrives = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
+  const [drives, setDrives] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [studentData, setStudentData] = useState<any>(null);
+  const [selectedDrive, setSelectedDrive] = useState<any>(null);
+  const [isApplying, setIsApplying] = useState(false);
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
 
-  const [drives] = useState([
-    {
-      id: 1,
-      companyName: 'Google',
-      roleName: 'Software Engineer',
-      jobType: 'Full-time',
-      location: 'Bangalore',
-      salary: '₹24 LPA',
-      deadline: '2024-12-15',
-      status: 'Open',
-      applicants: 145,
-      eligibility: 'B.Tech/M.Tech in CS/IT/ECE with CGPA ≥ 8.0',
-      description: 'Join Google as a Software Engineer and work on cutting-edge technologies that impact billions of users worldwide.',
-      requirements: ['Strong programming skills in Java/Python/C++', 'Knowledge of data structures and algorithms', 'Experience with web technologies'],
-      rounds: ['Online Assessment', 'Technical Interview', 'Manager Round', 'HR Round'],
-      companyLogo: '/logos/google.png',
-      applied: false,
-      bookmarked: true,
-      applicationDeadline: '2024-12-15',
-      driveDate: '2024-12-20',
-      skills: ['Java', 'Python', 'Data Structures', 'Algorithms', 'System Design']
-    },
-    {
-      id: 2,
-      companyName: 'Microsoft',
-      roleName: 'Cloud Solutions Architect',
-      jobType: 'Full-time',
-      location: 'Hyderabad',
-      salary: '₹28 LPA',
-      deadline: '2024-12-20',
-      status: 'Open',
-      applicants: 98,
-      eligibility: 'B.Tech/M.Tech with CGPA ≥ 7.5',
-      description: 'Design and implement cloud infrastructure solutions for enterprise clients using Microsoft Azure.',
-      requirements: ['Experience with cloud platforms', 'Knowledge of DevOps practices', 'Strong problem-solving skills'],
-      rounds: ['Technical Assessment', 'System Design', 'Behavioral Round'],
-      companyLogo: '/logos/microsoft.png',
-      applied: true,
-      bookmarked: false,
-      applicationDeadline: '2024-12-20',
-      driveDate: '2024-12-25',
-      skills: ['Azure', 'DevOps', 'Cloud Architecture', 'Python', 'Docker']
-    },
-    {
-      id: 3,
-      companyName: 'Amazon',
-      roleName: 'SDE-1',
-      jobType: 'Full-time',
-      location: 'Mumbai',
-      salary: '₹22 LPA',
-      deadline: '2024-12-10',
-      status: 'Closed',
-      applicants: 120,
-      eligibility: 'B.Tech in CS/IT/ECE with CGPA ≥ 7.0',
-      description: 'Build scalable distributed systems and services that power Amazon\'s e-commerce platform.',
-      requirements: ['Proficiency in Java/C++', 'Understanding of distributed systems', 'Strong analytical skills'],
-      rounds: ['Online Assessment', 'Technical Interview', 'Bar Raiser'],
-      companyLogo: '/logos/amazon.png',
-      applied: true,
-      bookmarked: false,
-      applicationDeadline: '2024-12-10',
-      driveDate: '2024-12-15',
-      skills: ['Java', 'AWS', 'Distributed Systems', 'Data Structures', 'Algorithms']
-    },
-    {
-      id: 4,
-      companyName: 'Infosys',
-      roleName: 'Software Developer',
-      jobType: 'Full-time',
-      location: 'Pune',
-      salary: '₹4.2 LPA',
-      deadline: '2024-12-05',
-      status: 'Upcoming',
-      applicants: 156,
-      eligibility: 'B.Tech/B.E in any stream with CGPA ≥ 6.0',
-      description: 'Join Infosys as a Software Developer and work on diverse projects across multiple technologies.',
-      requirements: ['Basic programming knowledge', 'Good communication skills', 'Eagerness to learn'],
-      rounds: ['Aptitude Test', 'Technical Interview', 'HR Round'],
-      companyLogo: '/logos/infosys.png',
-      applied: false,
-      bookmarked: true,
-      applicationDeadline: '2024-12-05',
-      driveDate: '2024-12-08',
-      skills: ['Java', 'Web Development', 'Database', 'Communication']
+  // Load drives and student data from Firebase
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load all drives
+        const allDrives = await DriveService.getAllDrives();
+        
+        // Filter only active drives
+        const activeDrives = allDrives.filter(drive => 
+          drive.status === 'active' || drive.status === 'upcoming'
+        );
+        
+        setDrives(activeDrives);
+
+        // Load student data if user is available
+        if (user?.studentId) {
+          const student = await StudentService.getStudentByStudentId(user.studentId);
+          setStudentData(student);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load placement drives",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user, toast]);
+
+  const handleApplyToDrive = async (drive: any) => {
+    if (!user || !studentData) {
+      toast({
+        title: "Error",
+        description: "Please complete your profile first",
+        variant: "destructive"
+      });
+      return;
     }
-  ]);
+
+    // Check eligibility
+    if (drive.eligibilityCriteria.minCGPA && studentData.cgpa < parseFloat(drive.eligibilityCriteria.minCGPA)) {
+      toast({
+        title: "Not Eligible",
+        description: `Minimum CGPA required: ${drive.eligibilityCriteria.minCGPA}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (drive.eligibilityCriteria.allowedBranches && drive.eligibilityCriteria.allowedBranches.length > 0) {
+      if (!drive.eligibilityCriteria.allowedBranches.includes(studentData.branch)) {
+        toast({
+          title: "Not Eligible",
+          description: `This drive is only for: ${drive.eligibilityCriteria.allowedBranches.join(', ')}`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    setSelectedDrive(drive);
+    setIsApplicationModalOpen(true);
+  };
+
+  const submitApplication = async () => {
+    if (!selectedDrive || !studentData) return;
+
+    try {
+      setIsApplying(true);
+      
+      await ApplicationService.applyForDrive(user?.studentId || '', selectedDrive.id, {
+        name: studentData.name,
+        email: studentData.email,
+        phone: studentData.phone,
+        cgpa: studentData.cgpa,
+        branch: studentData.branch,
+        year: studentData.year,
+        skillSet: studentData.skillSet || [],
+        resume: studentData.resume || ''
+      });
+
+      toast({
+        title: "Application Submitted",
+        description: `Successfully applied to ${selectedDrive.companyName}`,
+      });
+      
+      setIsApplicationModalOpen(false);
+      setSelectedDrive(null);
+      
+      // Refresh drives to update application status
+      const allDrives = await DriveService.getAllDrives();
+      const activeDrives = allDrives.filter(drive => 
+        drive.status === 'active' || drive.status === 'upcoming'
+      );
+      setDrives(activeDrives);
+      
+    } catch (error: any) {
+      console.error('Error applying to drive:', error);
+      toast({
+        title: "Application Failed",
+        description: error.message || "Failed to submit application",
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
   };
 
-  const handleApply = (driveId: number, companyName: string) => {
-    toast({
-      title: "Application Submitted",
-      description: `Your application for ${companyName} has been submitted successfully.`,
-    });
+  const handleApply = async (drive: any) => {
+    await handleApplyToDrive(drive);
   };
 
   const handleBookmark = (driveId: number, companyName: string, isBookmarked: boolean) => {
@@ -142,19 +180,21 @@ const PlacementDrives = () => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Open': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Closed': return 'bg-red-100 text-red-800 border-red-200';
-      case 'Upcoming': return 'bg-blue-100 text-blue-800 border-blue-200';
+    switch (status.toLowerCase()) {
+      case 'active':
+      case 'open': return 'bg-green-100 text-green-800 border-green-200';
+      case 'closed': return 'bg-red-100 text-red-800 border-red-200';
+      case 'upcoming': return 'bg-blue-100 text-blue-800 border-blue-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Open': return <CheckCircle className="h-4 w-4" />;
-      case 'Closed': return <XCircle className="h-4 w-4" />;
-      case 'Upcoming': return <Clock className="h-4 w-4" />;
+    switch (status.toLowerCase()) {
+      case 'active':
+      case 'open': return <CheckCircle className="h-4 w-4" />;
+      case 'closed': return <XCircle className="h-4 w-4" />;
+      case 'upcoming': return <Clock className="h-4 w-4" />;
       default: return <Clock className="h-4 w-4" />;
     }
   };
@@ -162,18 +202,37 @@ const PlacementDrives = () => {
   const filteredDrives = drives.filter(drive => {
     const matchesSearch = drive.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          drive.roleName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || drive.status.toLowerCase() === filterStatus.toLowerCase();
-    const matchesType = filterType === 'all' || drive.jobType.toLowerCase() === filterType.toLowerCase();
+    
+    let matchesStatus = false;
+    if (filterStatus === 'all') {
+      matchesStatus = true;
+    } else if (filterStatus === 'open') {
+      matchesStatus = drive.status === 'active' || drive.status === 'open';
+    } else {
+      matchesStatus = drive.status.toLowerCase() === filterStatus.toLowerCase();
+    }
+    
+    const matchesType = filterType === 'all' || drive.jobType?.toLowerCase() === filterType.toLowerCase();
     
     return matchesSearch && matchesStatus && matchesType;
   });
 
   const stats = {
     totalDrives: drives.length,
-    openDrives: drives.filter(d => d.status === 'Open').length,
-    appliedDrives: drives.filter(d => d.applied).length,
-    bookmarkedDrives: drives.filter(d => d.bookmarked).length
+    openDrives: drives.filter(d => d.status === 'active' || d.status === 'open').length,
+    appliedDrives: 0, // Will be calculated from ApplicationService
+    bookmarkedDrives: 0 // Will be implemented later
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -297,7 +356,7 @@ const PlacementDrives = () => {
                         <Badge className={`${getStatusColor(drive.status)} border`}>
                           <div className="flex items-center gap-1">
                             {getStatusIcon(drive.status)}
-                            {drive.status}
+                            {drive.status === 'active' ? 'Open' : drive.status.charAt(0).toUpperCase() + drive.status.slice(1)}
                           </div>
                         </Badge>
                         {drive.applied && (
@@ -360,8 +419,8 @@ const PlacementDrives = () => {
                       <ExternalLink className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
-                    {drive.status === 'Open' && !drive.applied && (
-                      <Button onClick={() => handleApply(drive.id, drive.companyName)}>
+                    {(drive.status === 'active' || drive.status === 'open') && !drive.applied && (
+                      <Button onClick={() => handleApply(drive)}>
                         Apply Now
                       </Button>
                     )}
@@ -442,8 +501,8 @@ const PlacementDrives = () => {
                     >
                       <BookmarkCheck className="h-4 w-4" />
                     </Button>
-                    {drive.status === 'Open' && !drive.applied && (
-                      <Button onClick={() => handleApply(drive.id, drive.companyName)}>
+                    {(drive.status === 'active' || drive.status === 'open') && !drive.applied && (
+                      <Button onClick={() => handleApply(drive)}>
                         Apply Now
                       </Button>
                     )}
@@ -454,6 +513,45 @@ const PlacementDrives = () => {
           ))}
         </TabsContent>
       </Tabs>
+
+      {/* Application Confirmation Modal */}
+      <Dialog open={isApplicationModalOpen} onOpenChange={setIsApplicationModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Application</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to apply to {selectedDrive?.companyName} for the {selectedDrive?.roleName} position?
+              Your profile details will be automatically submitted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {studentData && (
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <p><strong>Name:</strong> {studentData.name}</p>
+                <p><strong>Email:</strong> {studentData.email}</p>
+                <p><strong>CGPA:</strong> {studentData.cgpa}</p>
+                <p><strong>Branch:</strong> {studentData.branch}</p>
+                <p><strong>Year:</strong> {studentData.year}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsApplicationModalOpen(false)}
+              disabled={isApplying}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={submitApplication}
+              disabled={isApplying}
+            >
+              {isApplying ? "Applying..." : "Confirm Application"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

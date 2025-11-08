@@ -18,6 +18,12 @@ import AuthoritySignup from "./pages/AuthoritySignup";
 import Login from "./pages/Login";
 import PendingVerification from "./pages/PendingVerification";
 import PendingApproval from "./pages/PendingApproval";
+import CompleteProfile from "./pages/CompleteProfile";
+import CheckStatus from "./pages/CheckStatus";
+import SystemTest from "./pages/SystemTest";
+import WorkflowTest from "./pages/WorkflowTest";
+import EmailValidationTest from "./pages/EmailValidationTest";
+import SampleDataGenerator from "./pages/SampleDataGenerator";
 
 // Dashboard Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -32,11 +38,11 @@ import ManageDrives from "./pages/tpo/ManageDrives";
 import Companies from "./pages/tpo/Companies";
 import Students from "./pages/tpo/Students";
 import Reports from "./pages/tpo/Reports";
-import ManageStudents from "./pages/hod/ManageStudents";
 import PendingApprovals from "./pages/hod/PendingApprovals";
 import HODReports from "./pages/hod/Reports";
 import HODResults from "./pages/hod/Results";
 import HODDashboard from "./pages/hod/HODDashboard";
+import HODDashboardContent from "./pages/hod/HODDashboardContent";
 import AdminVerify from "./pages/admin/AdminVerify";
 import NotFound from "./pages/NotFound";
 
@@ -60,6 +66,12 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/pending-verification" element={<PendingVerification />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
+            <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/check-status" element={<CheckStatus />} />
+            <Route path="/system-test" element={<SystemTest />} />
+            <Route path="/workflow-test" element={<WorkflowTest />} />
+            <Route path="/email-test" element={<EmailValidationTest />} />
+            <Route path="/sample-data" element={<SampleDataGenerator />} />
 
             {/* Student Routes */}
             <Route path="/student" element={<StudentDashboard />}>
@@ -68,8 +80,8 @@ const App = () => (
               <Route path="ai-resume" element={<AIResumeBuilder />} />
               <Route path="ai-interview" element={<AIMockInterview />} />
               <Route path="results" element={<MyResults />} />
-              <Route path="dashboard" element={<div />} />
-              <Route index element={<div />} />
+              <Route path="dashboard" element={<div className="p-6"><h2>Dashboard Content</h2></div>} />
+              <Route index element={<div className="p-6"><h2>Welcome to Student Portal</h2></div>} />
             </Route>
 
             {/* TPO Routes */}
@@ -84,12 +96,11 @@ const App = () => (
 
             {/* HOD Routes */}
             <Route path="/hod" element={<HODDashboard />}>
-              <Route path="students" element={<ManageStudents />} />
+              <Route path="dashboard" element={<HODDashboardContent />} />
               <Route path="approvals" element={<PendingApprovals />} />
               <Route path="reports" element={<HODReports />} />
               <Route path="results" element={<HODResults />} />
-              <Route path="dashboard" element={<div />} />
-              <Route index element={<div />} />
+              <Route index element={<HODDashboardContent />} />
             </Route>
 
             {/* Admin Routes */}

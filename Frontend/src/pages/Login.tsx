@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { StudentService } from '@/services/firebaseService';
 import { loginWithEmail } from '@/lib/firebaseService';
 import { LogIn } from 'lucide-react';
 
@@ -24,7 +25,26 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const user = await loginWithEmail(credentials.email, credentials.password);
+      let user = null;
+      
+      // Try student login first
+      try {
+        const studentLogin = await StudentService.loginStudent(credentials.email, credentials.password);
+        user = {
+          uid: studentLogin.user.uid,
+          email: studentLogin.studentData.email,
+          name: studentLogin.studentData.name,
+          role: 'student',
+          isApproved: studentLogin.studentData.isApproved,
+          studentId: studentLogin.studentData.studentId,
+          university: studentLogin.studentData.university,
+          profileCompleted: studentLogin.studentData.profileCompleted
+        };
+      } catch (studentError) {
+        // If student login fails, try regular login
+        console.log('Student login failed, trying regular login...');
+        user = await loginWithEmail(credentials.email, credentials.password);
+      }
       
       if (user) {
         login(user);
@@ -36,7 +56,12 @@ const Login = () => {
         // Route based on role
         switch (user.role) {
           case 'student':
-            navigate('/student/dashboard');
+            // Check if profile is completed
+            if (user.profileCompleted) {
+              navigate('/student/dashboard');
+            } else {
+              navigate(`/complete-profile?studentId=${user.studentId}`);
+            }
             break;
           case 'tpo':
             navigate('/tpo/dashboard');
@@ -85,7 +110,7 @@ const Login = () => {
                 type="email"
                 required
                 value={credentials.email}
-                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                onChange={(e) => setCredentials({ ...credentials, email: e.target.value.toLowerCase().trim() })}
                 placeholder="Enter your email"
               />
             </div>

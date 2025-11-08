@@ -52,5 +52,17 @@ service cloud.firestore {
       // Allow all authenticated users to read and write (temporarily for development)
       allow read, write: if isAuthenticated();
     }
+
+    // PENDING_STUDENTS Collection
+    match /pending_students/{pendingId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
+
+    // STUDENT_RESULTS Collection
+    match /student_results/{resultId} {
+      // Allow all authenticated users to read and write (temporarily for development)
+      allow read, write: if isAuthenticated();
+    }
   }
 }

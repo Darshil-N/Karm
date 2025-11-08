@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,11 +14,23 @@ import {
 import { 
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogFooter,
 } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { 
   Select,
   SelectContent,
@@ -26,1181 +38,792 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import { StudentService } from '@/services/firebaseService';
 import { 
-  Search, 
-  Filter, 
-  Download, 
-  Edit,
-  Save,
-  X,
-  Upload,
-  FileSpreadsheet,
-  TrendingUp,
-  Award,
-  AlertTriangle,
-  CheckCircle,
-  FileText,
-  AlertCircle,
-  Eye,
+  Upload, 
   FileImage,
-  File
+  Search,
+  Filter,
+  Eye,
+  Download,
+  Edit3,
+  Trophy,
+  TrendingUp,
+  Users,
+  Building2,
+  Calendar,
+  MapPin,
+  DollarSign,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  BarChart3,
+  PieChart
 } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
-import { useNotifications } from '@/contexts/NotificationContext';
-
-interface Subject {
-  id: string;
-  name: string;
-  code: string;
-  credits: number;
-  maxMarks: number;
-}
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface StudentResult {
   id: string;
+  studentId: string;
   studentName: string;
-  rollNumber: string;
-  semester: number;
+  email: string;
   branch: string;
-  cgpa: number;
-  sgpa: number;
-  subjects: {
-    [subjectId: string]: {
-      marks: number;
-      grade: string;
-      status: 'Pass' | 'Fail' | 'Absent';
-    };
+  year: string;
+  company: string;
+  position: string;
+  packageAmount: number;
+  interviewDate?: any;
+  offerDate?: any;
+  joiningDate?: any;
+  location?: string;
+  status: 'placed' | 'selected' | 'pending' | 'rejected';
+  resultType: 'placement' | 'internship' | 'higher_studies';
+  uploadedBy: string;
+  uploadedAt: any;
+  documentUrl?: string;
+  extractedData?: {
+    text: string;
+    confidence: number;
   };
-  overallStatus: 'Pass' | 'Fail' | 'ATKT';
-  attendance: number;
-  uploadedDocuments?: {
-    fileName: string;
-    fileType: string;
-    fileUrl: string;
-    uploadDate: Date;
-  }[];
+  verified: boolean;
+  verifiedBy?: string;
+  verifiedAt?: any;
+  notes?: string;
 }
 
-interface UploadResult {
-  success: boolean;
-  studentsProcessed: number;
-  errors: string[];
-  warnings: string[];
+interface PlacementStats {
+  totalPlacements: number;
+  totalStudents: number;
+  placementRate: number;
+  averagePackage: number;
+  topPackage: number;
+  byBranch: { [key: string]: number };
+  byCompany: { [key: string]: number };
+  recentPlacements: number;
 }
-
-const mockSubjects: Subject[] = [
-  { id: 'CS401', name: 'Data Structures', code: 'CS401', credits: 4, maxMarks: 100 },
-  { id: 'CS402', name: 'Database Management', code: 'CS402', credits: 4, maxMarks: 100 },
-  { id: 'CS403', name: 'Computer Networks', code: 'CS403', credits: 3, maxMarks: 100 },
-  { id: 'CS404', name: 'Operating Systems', code: 'CS404', credits: 4, maxMarks: 100 },
-  { id: 'CS405', name: 'Software Engineering', code: 'CS405', credits: 3, maxMarks: 100 },
-  { id: 'CS406', name: 'Web Technologies', code: 'CS406', credits: 3, maxMarks: 100 }
-];
-
-const mockStudentResults: StudentResult[] = [
-  {
-    id: '1',
-    studentName: 'Rahul Sharma',
-    rollNumber: 'CS21B001',
-    semester: 4,
-    branch: 'Computer Science',
-    cgpa: 8.5,
-    sgpa: 8.7,
-    subjects: {
-      'CS401': { marks: 87, grade: 'A', status: 'Pass' },
-      'CS402': { marks: 92, grade: 'A+', status: 'Pass' },
-      'CS403': { marks: 78, grade: 'B+', status: 'Pass' },
-      'CS404': { marks: 85, grade: 'A', status: 'Pass' },
-      'CS405': { marks: 88, grade: 'A', status: 'Pass' },
-      'CS406': { marks: 90, grade: 'A+', status: 'Pass' }
-    },
-    overallStatus: 'Pass',
-    attendance: 92
-  },
-  {
-    id: '2',
-    studentName: 'Priya Patel',
-    rollNumber: 'CS21B002',
-    semester: 4,
-    branch: 'Computer Science',
-    cgpa: 9.1,
-    sgpa: 9.3,
-    subjects: {
-      'CS401': { marks: 95, grade: 'A+', status: 'Pass' },
-      'CS402': { marks: 98, grade: 'A+', status: 'Pass' },
-      'CS403': { marks: 91, grade: 'A+', status: 'Pass' },
-      'CS404': { marks: 94, grade: 'A+', status: 'Pass' },
-      'CS405': { marks: 89, grade: 'A', status: 'Pass' },
-      'CS406': { marks: 93, grade: 'A+', status: 'Pass' }
-    },
-    overallStatus: 'Pass',
-    attendance: 98
-  },
-  {
-    id: '3',
-    studentName: 'Amit Kumar',
-    rollNumber: 'CS21B003',
-    semester: 4,
-    branch: 'Computer Science',
-    cgpa: 6.8,
-    sgpa: 6.5,
-    subjects: {
-      'CS401': { marks: 65, grade: 'B', status: 'Pass' },
-      'CS402': { marks: 58, grade: 'C+', status: 'Pass' },
-      'CS403': { marks: 72, grade: 'B+', status: 'Pass' },
-      'CS404': { marks: 34, grade: 'F', status: 'Fail' },
-      'CS405': { marks: 68, grade: 'B', status: 'Pass' },
-      'CS406': { marks: 71, grade: 'B+', status: 'Pass' }
-    },
-    overallStatus: 'ATKT',
-    attendance: 78
-  },
-  {
-    id: '4',
-    studentName: 'Sneha Reddy',
-    rollNumber: 'CS21B004',
-    semester: 4,
-    branch: 'Computer Science',
-    cgpa: 8.9,
-    sgpa: 9.0,
-    subjects: {
-      'CS401': { marks: 91, grade: 'A+', status: 'Pass' },
-      'CS402': { marks: 88, grade: 'A', status: 'Pass' },
-      'CS403': { marks: 92, grade: 'A+', status: 'Pass' },
-      'CS404': { marks: 89, grade: 'A', status: 'Pass' },
-      'CS405': { marks: 90, grade: 'A+', status: 'Pass' },
-      'CS406': { marks: 94, grade: 'A+', status: 'Pass' }
-    },
-    overallStatus: 'Pass',
-    attendance: 95
-  }
-];
 
 const Results = () => {
-  const { addNotification } = useNotifications();
-  const [results, setResults] = useState<StudentResult[]>(mockStudentResults);
+  const { toast } = useToast();
+  const [results, setResults] = useState<StudentResult[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [semesterFilter, setSemesterFilter] = useState<string>('All');
-  const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [editingResult, setEditingResult] = useState<StudentResult | null>(null);
-  const [editedMarks, setEditedMarks] = useState<{[subjectId: string]: number}>({});
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
-  const [viewingResult, setViewingResult] = useState<StudentResult | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedResult, setSelectedResult] = useState<StudentResult | null>(null);
+  const [resultDetailOpen, setResultDetailOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [placementStats, setPlacementStats] = useState<PlacementStats | null>(null);
 
-  const filteredResults = results.filter(result => {
-    const matchesSearch = result.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         result.rollNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSemester = semesterFilter === 'All' || result.semester.toString() === semesterFilter;
-    const matchesStatus = statusFilter === 'All' || result.overallStatus === statusFilter;
-    return matchesSearch && matchesSemester && matchesStatus;
+  // Upload form state
+  const [uploadForm, setUploadForm] = useState({
+    studentId: '',
+    company: '',
+    position: '',
+    packageAmount: '',
+    location: '',
+    resultType: 'placement' as 'placement' | 'internship' | 'higher_studies',
+    status: 'placed' as 'placed' | 'selected' | 'pending' | 'rejected',
+    notes: ''
   });
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const getGradeFromMarks = (marks: number): string => {
-    if (marks >= 90) return 'A+';
-    if (marks >= 80) return 'A';
-    if (marks >= 70) return 'B+';
-    if (marks >= 60) return 'B';
-    if (marks >= 50) return 'C+';
-    if (marks >= 40) return 'C';
-    return 'F';
-  };
-
-  const getStatusFromMarks = (marks: number): 'Pass' | 'Fail' => {
-    return marks >= 40 ? 'Pass' : 'Fail';
-  };
-
-  const calculateSGPA = (subjects: StudentResult['subjects']): number => {
-    let totalCredits = 0;
-    let totalGradePoints = 0;
-
-    Object.keys(subjects).forEach(subjectId => {
-      const subject = mockSubjects.find(s => s.id === subjectId);
-      if (subject) {
-        const marks = subjects[subjectId].marks;
-        let gradePoint = 0;
+  // Load results and stats from Firebase
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const resultsData = await StudentService.getStudentResults();
+        setResults(resultsData);
         
-        if (marks >= 90) gradePoint = 10;
-        else if (marks >= 80) gradePoint = 9;
-        else if (marks >= 70) gradePoint = 8;
-        else if (marks >= 60) gradePoint = 7;
-        else if (marks >= 50) gradePoint = 6;
-        else if (marks >= 40) gradePoint = 5;
-        else gradePoint = 0;
-
-        totalCredits += subject.credits;
-        totalGradePoints += gradePoint * subject.credits;
+        // Calculate placement statistics
+        const stats = calculatePlacementStats(resultsData);
+        setPlacementStats(stats);
+      } catch (error) {
+        console.error('Error loading results:', error);
+        toast({
+          title: "Error Loading Results",
+          description: "Failed to load student results. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
-    });
-
-    return totalCredits > 0 ? Number((totalGradePoints / totalCredits).toFixed(2)) : 0;
-  };
-
-  const handleEditMarks = (result: StudentResult) => {
-    setEditingResult(result);
-    setEditedMarks(
-      Object.keys(result.subjects).reduce((acc, subjectId) => {
-        acc[subjectId] = result.subjects[subjectId].marks;
-        return acc;
-      }, {} as {[subjectId: string]: number})
-    );
-  };
-
-  const handleSaveMarks = () => {
-    if (!editingResult) return;
-
-    const updatedSubjects = { ...editingResult.subjects };
-    Object.keys(editedMarks).forEach(subjectId => {
-      const marks = editedMarks[subjectId];
-      updatedSubjects[subjectId] = {
-        marks,
-        grade: getGradeFromMarks(marks),
-        status: getStatusFromMarks(marks)
-      };
-    });
-
-    const newSGPA = calculateSGPA(updatedSubjects);
-    const hasFailedSubject = Object.values(updatedSubjects).some(s => s.status === 'Fail');
-    const overallStatus = hasFailedSubject ? 'ATKT' : 'Pass';
-
-    const updatedResult: StudentResult = {
-      ...editingResult,
-      subjects: updatedSubjects,
-      sgpa: newSGPA,
-      overallStatus
     };
 
-    setResults(prev => prev.map(r => r.id === editingResult.id ? updatedResult : r));
-    setEditingResult(null);
-    setEditedMarks({});
-    
-    // Add notification for result update
-    addNotification({
-      title: 'Results Updated',
-      message: `Academic results updated for ${editingResult.studentName} (${editingResult.rollNumber})`,
-      type: 'success',
-      actionUrl: '/hod/results',
-      actionText: 'View Results'
+    loadData();
+
+    // Subscribe to real-time updates
+    const unsubscribe = StudentService.subscribeToStudentResults((resultsData) => {
+      setResults(resultsData);
+      const stats = calculatePlacementStats(resultsData);
+      setPlacementStats(stats);
     });
+
+    return () => unsubscribe();
+  }, [toast]);
+
+  const calculatePlacementStats = (resultsData: StudentResult[]): PlacementStats => {
+    const placements = resultsData.filter(r => r.status === 'placed');
+    const packages = placements.map(p => p.packageAmount).filter(p => p > 0);
     
-    toast({
-      title: "Results Updated",
-      description: `Successfully updated results for ${editingResult.studentName}`,
+    const byBranch: { [key: string]: number } = {};
+    const byCompany: { [key: string]: number } = {};
+    
+    placements.forEach(placement => {
+      byBranch[placement.branch] = (byBranch[placement.branch] || 0) + 1;
+      byCompany[placement.company] = (byCompany[placement.company] || 0) + 1;
     });
+
+    // Get recent placements (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentPlacements = placements.filter(p => 
+      p.uploadedAt && p.uploadedAt.toDate() > thirtyDaysAgo
+    ).length;
+
+    return {
+      totalPlacements: placements.length,
+      totalStudents: new Set(resultsData.map(r => r.studentId)).size,
+      placementRate: resultsData.length > 0 ? (placements.length / resultsData.length) * 100 : 0,
+      averagePackage: packages.length > 0 ? packages.reduce((a, b) => a + b, 0) / packages.length : 0,
+      topPackage: packages.length > 0 ? Math.max(...packages) : 0,
+      byBranch,
+      byCompany,
+      recentPlacements
+    };
   };
 
+  // Filter results based on search and filters
+  const filteredResults = results.filter(result => {
+    const matchesSearch = searchTerm === '' || 
+      result.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      result.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      result.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      result.position.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesBranch = selectedBranch === 'all' || result.branch === selectedBranch;
+    const matchesStatus = selectedStatus === 'all' || result.status === selectedStatus;
+
+    return matchesSearch && matchesBranch && matchesStatus;
+  });
+
+  // Get unique values for filters
+  const branches = [...new Set(results.map(r => r.branch).filter(Boolean))];
+  const statuses = [...new Set(results.map(r => r.status))];
+
+  // File upload and OCR processing
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        setUploadedFile(file);
+        // In a real application, you would implement OCR here
+        // For now, we'll simulate the process
+        simulateOCR(file);
+      } else {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload an image file (JPG, PNG, etc.)",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
-    const allowedTypes = ['text/csv', 'application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
+  const simulateOCR = async (file: File) => {
+    // Simulate OCR processing
+    setTimeout(() => {
+      // Mock extracted data - in real app, use actual OCR service
+      const mockData = {
+        company: "Tech Solutions Inc",
+        position: "Software Engineer",
+        packageAmount: "8.5",
+        location: "Bangalore"
+      };
+
+      setUploadForm(prev => ({
+        ...prev,
+        ...mockData
+      }));
+
       toast({
-        title: "Invalid File Format",
-        description: "Please upload a CSV, PDF, JPG, or PNG file.",
-        variant: "destructive"
+        title: "Text Extracted",
+        description: "Data has been automatically extracted from the image. Please verify and edit if needed.",
+      });
+    }, 2000);
+  };
+
+  const handleUploadResult = async () => {
+    if (!uploadForm.studentId || !uploadForm.company) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
       });
       return;
     }
 
-    if (file.type === 'text/csv') {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const csv = e.target?.result as string;
-        processCSVData(csv);
-      };
-      reader.readAsText(file);
-    } else {
-      // Handle PDF, JPG, PNG files
-      processDocumentFile(file);
-    }
-  };
-
-  const processDocumentFile = async (file: File) => {
     setIsUploading(true);
-    setUploadProgress(0);
-
     try {
-      // Simulate file processing
-      for (let i = 0; i <= 100; i += 10) {
-        setUploadProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      // Create a URL for the file (in real app, this would be uploaded to server)
-      const fileUrl = URL.createObjectURL(file);
-      
-      const newDocument = {
-        fileName: file.name,
-        fileType: file.type,
-        fileUrl: fileUrl,
-        uploadDate: new Date()
+      const resultData = {
+        ...uploadForm,
+        packageAmount: parseFloat(uploadForm.packageAmount) || 0,
+        uploadedBy: 'HOD', // In real app, get from auth context
+        uploadedAt: new Date(),
+        verified: false
       };
 
-      // For demo purposes, add document to all students
-      // In real app, you'd associate with specific students
-      setResults(prev => prev.map(student => ({
-        ...student,
-        uploadedDocuments: [
-          ...(student.uploadedDocuments || []),
-          newDocument
-        ]
-      })));
-
-      setUploadResult({
-        success: true,
-        studentsProcessed: results.length,
-        errors: [],
-        warnings: []
-      });
-
-      addNotification({
-        title: 'Document Upload Completed',
-        message: `Successfully uploaded ${file.name} for student results`,
-        type: 'success',
-        actionUrl: '/hod/results',
-        actionText: 'View Results'
-      });
-
+      await StudentService.addStudentResult(resultData);
+      
       toast({
-        title: "Document Uploaded",
-        description: `Successfully uploaded ${file.name}`,
+        title: "Result Added",
+        description: "Student result has been added successfully.",
       });
 
+      // Reset form
+      setUploadForm({
+        studentId: '',
+        company: '',
+        position: '',
+        packageAmount: '',
+        location: '',
+        resultType: 'placement',
+        status: 'placed',
+        notes: ''
+      });
+      setUploadedFile(null);
+      setUploadDialogOpen(false);
     } catch (error) {
-      setUploadResult({
-        success: false,
-        studentsProcessed: 0,
-        errors: [error instanceof Error ? error.message : 'Upload failed'],
-        warnings: []
-      });
-
+      console.error('Error uploading result:', error);
       toast({
-        title: "Upload Failed",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive"
+        title: "Error Adding Result",
+        description: "Failed to add student result. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsUploading(false);
     }
   };
 
-  const processCSVData = async (csvData: string) => {
-    setIsUploading(true);
-    setUploadProgress(0);
-    setUploadResult(null);
+  const handleViewResult = (result: StudentResult) => {
+    setSelectedResult(result);
+    setResultDetailOpen(true);
+  };
 
-    try {
-      const lines = csvData.split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
-      
-      // Expected format: Roll Number, Student Name, CS401, CS402, CS403, CS404, CS405, CS406
-      const expectedHeaders = ['Roll Number', 'Student Name', ...mockSubjects.map(s => s.code)];
-      const headerValidation = expectedHeaders.every(h => headers.includes(h));
-      
-      if (!headerValidation) {
-        throw new Error(`Invalid CSV format. Expected headers: ${expectedHeaders.join(', ')}`);
-      }
-
-      const errors: string[] = [];
-      const warnings: string[] = [];
-      const updatedResults: StudentResult[] = [...results];
-      let processedCount = 0;
-
-      for (let i = 1; i < lines.length; i++) {
-        if (lines[i].trim() === '') continue;
-        
-        setUploadProgress((i / (lines.length - 1)) * 100);
-        await new Promise(resolve => setTimeout(resolve, 50)); // Simulate processing time
-
-        const values = lines[i].split(',').map(v => v.trim());
-        if (values.length < headers.length) {
-          errors.push(`Row ${i + 1}: Insufficient data`);
-          continue;
-        }
-
-        const rollNumber = values[headers.indexOf('Roll Number')];
-        const studentName = values[headers.indexOf('Student Name')];
-        
-        const existingResultIndex = updatedResults.findIndex(r => r.rollNumber === rollNumber);
-        if (existingResultIndex === -1) {
-          warnings.push(`Row ${i + 1}: Student ${rollNumber} not found in database`);
-          continue;
-        }
-
-        const updatedSubjects = { ...updatedResults[existingResultIndex].subjects };
-        let hasInvalidMarks = false;
-
-        mockSubjects.forEach(subject => {
-          const markValue = values[headers.indexOf(subject.code)];
-          const marks = parseInt(markValue);
-          
-          if (isNaN(marks) || marks < 0 || marks > subject.maxMarks) {
-            errors.push(`Row ${i + 1}: Invalid marks for ${subject.code} (${markValue})`);
-            hasInvalidMarks = true;
-          } else {
-            updatedSubjects[subject.id] = {
-              marks,
-              grade: getGradeFromMarks(marks),
-              status: getStatusFromMarks(marks)
-            };
-          }
-        });
-
-        if (!hasInvalidMarks) {
-          const newSGPA = calculateSGPA(updatedSubjects);
-          const hasFailedSubject = Object.values(updatedSubjects).some(s => s.status === 'Fail');
-          const overallStatus = hasFailedSubject ? 'ATKT' : 'Pass';
-
-          updatedResults[existingResultIndex] = {
-            ...updatedResults[existingResultIndex],
-            subjects: updatedSubjects,
-            sgpa: newSGPA,
-            overallStatus
-          };
-          processedCount++;
-        }
-      }
-
-      setResults(updatedResults);
-      setUploadResult({
-        success: true,
-        studentsProcessed: processedCount,
-        errors,
-        warnings
-      });
-
-      // Add notification for bulk upload
-      addNotification({
-        title: 'Bulk Results Upload Completed',
-        message: `Successfully processed ${processedCount} student results with ${errors.length} errors`,
-        type: errors.length === 0 ? 'success' : 'warning',
-        actionUrl: '/hod/results',
-        actionText: 'View Results'
-      });
-
-      toast({
-        title: "Upload Completed",
-        description: `Processed ${processedCount} students with ${errors.length} errors`,
-      });
-
-    } catch (error) {
-      setUploadResult({
-        success: false,
-        studentsProcessed: 0,
-        errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
-        warnings: []
-      });
-
-      toast({
-        title: "Upload Failed",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive"
-      });
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(100);
+  const exportResultsToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.text('Placement Results Report', 20, 20);
+    
+    // Add statistics
+    doc.setFontSize(12);
+    if (placementStats) {
+      doc.text(`Total Placements: ${placementStats.totalPlacements}`, 20, 40);
+      doc.text(`Placement Rate: ${placementStats.placementRate.toFixed(1)}%`, 20, 50);
+      doc.text(`Average Package: ₹${placementStats.averagePackage.toFixed(1)} LPA`, 20, 60);
     }
+
+    // Add table
+    const tableData = filteredResults.map(result => [
+      result.studentName,
+      result.studentId,
+      result.branch,
+      result.company,
+      result.position,
+      `₹${result.packageAmount} LPA`,
+      result.status,
+      result.location || 'N/A'
+    ]);
+
+    autoTable(doc, {
+      head: [['Name', 'ID', 'Branch', 'Company', 'Position', 'Package', 'Status', 'Location']],
+      body: tableData,
+      startY: 80,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] }
+    });
+
+    doc.save('placement-results.pdf');
   };
 
-  const downloadTemplate = () => {
-    const headers = ['Roll Number', 'Student Name', ...mockSubjects.map(s => s.code)];
-    const sampleData = [
-      ['CS21B001', 'Rahul Sharma', '87', '92', '78', '85', '88', '90'],
-      ['CS21B002', 'Priya Patel', '95', '98', '91', '94', '89', '93'],
-      ['CS21B003', 'Amit Kumar', '65', '58', '72', '34', '68', '71']
-    ];
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(',') + '\n'
-      + sampleData.map(row => row.join(',')).join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "marks_upload_template.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const formatDate = (timestamp: any) => {
+    if (!timestamp || !timestamp.toDate) return 'N/A';
+    return timestamp.toDate().toLocaleDateString();
   };
 
-  const getFileIcon = (fileType: string) => {
-    if (fileType === 'application/pdf') {
-      return <FileText className="h-4 w-4 text-red-600" />;
-    } else if (fileType.startsWith('image/')) {
-      return <FileImage className="h-4 w-4 text-blue-600" />;
-    }
-    return <File className="h-4 w-4 text-gray-600" />;
-  };
-
-  const renderDocument = (doc: any) => {
-    if (doc.fileType === 'application/pdf') {
-      return (
-        <iframe
-          src={doc.fileUrl}
-          className="w-full h-96 border rounded"
-          title={doc.fileName}
-        />
-      );
-    } else if (doc.fileType.startsWith('image/')) {
-      return (
-        <img
-          src={doc.fileUrl}
-          alt={doc.fileName}
-          className="max-w-full h-auto border rounded"
-        />
-      );
-    }
-    return <p>Unsupported file type</p>;
-  };
-
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Pass':
-        return <Badge className="bg-green-100 text-green-800">Pass</Badge>;
-      case 'Fail':
-        return <Badge variant="destructive">Fail</Badge>;
-      case 'ATKT':
-        return <Badge className="bg-yellow-100 text-yellow-800">ATKT</Badge>;
+      case 'placed':
+        return 'bg-green-100 text-green-800';
+      case 'selected':
+        return 'bg-blue-100 text-blue-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const exportResults = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Roll Number,Semester,SGPA,CGPA,Status,Attendance\n"
-      + filteredResults.map(result => 
-          `${result.studentName},${result.rollNumber},${result.semester},${result.sgpa},${result.cgpa},${result.overallStatus},${result.attendance}%`
-        ).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "student_results.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading results...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Student Results</h1>
-          <p className="text-muted-foreground">View and manage student academic results</p>
+          <h1 className="text-3xl font-bold mb-2">Placement Results</h1>
+          <p className="text-muted-foreground">
+            Track and manage student placement outcomes
+          </p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                Upload Marks
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Upload Student Marks</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Upload Instructions</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• <strong>CSV files:</strong> Bulk upload marks for multiple students</li>
-                    <li>• <strong>PDF files:</strong> Upload result documents (mark sheets, transcripts)</li>
-                    <li>• <strong>Image files (JPG/PNG):</strong> Upload scanned result documents</li>
-                    <li>• Required CSV columns: Roll Number, Student Name, and subject codes ({mockSubjects.map(s => s.code).join(', ')})</li>
-                    <li>• Marks should be between 0 and {mockSubjects[0]?.maxMarks || 100}</li>
-                  </ul>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <Button variant="outline" onClick={downloadTemplate}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Download Template
-                  </Button>
-                  <Button 
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose File
-                  </Button>
-                </div>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.pdf,.jpg,.jpeg,.png"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-
-                {isUploading && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Processing...</span>
-                      <span>{Math.round(uploadProgress)}%</span>
-                    </div>
-                    <Progress value={uploadProgress} className="w-full" />
-                  </div>
-                )}
-
-                {uploadResult && (
-                  <div className="space-y-3">
-                    <div className={`p-4 rounded-lg ${
-                      uploadResult.success 
-                        ? uploadResult.errors.length === 0 
-                          ? 'bg-green-50 border border-green-200' 
-                          : 'bg-yellow-50 border border-yellow-200'
-                        : 'bg-red-50 border border-red-200'
-                    }`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        {uploadResult.success ? (
-                          uploadResult.errors.length === 0 ? (
-                            <CheckCircle className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                          )
-                        ) : (
-                          <AlertCircle className="h-5 w-5 text-red-600" />
-                        )}
-                        <h4 className="font-medium">
-                          {uploadResult.success ? 'Upload Completed' : 'Upload Failed'}
-                        </h4>
-                      </div>
-                      <p className="text-sm mb-2">
-                        Students processed: {uploadResult.studentsProcessed}
-                      </p>
-                      
-                      {uploadResult.errors.length > 0 && (
-                        <div className="mt-3">
-                          <h5 className="font-medium text-red-700 mb-1">Errors:</h5>
-                          <ul className="text-sm text-red-600 space-y-1 max-h-32 overflow-y-auto">
-                            {uploadResult.errors.map((error, idx) => (
-                              <li key={idx}>• {error}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {uploadResult.warnings.length > 0 && (
-                        <div className="mt-3">
-                          <h5 className="font-medium text-yellow-700 mb-1">Warnings:</h5>
-                          <ul className="text-sm text-yellow-600 space-y-1 max-h-32 overflow-y-auto">
-                            {uploadResult.warnings.map((warning, idx) => (
-                              <li key={idx}>• {warning}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsUploadDialogOpen(false);
-                    setUploadResult(null);
-                    setUploadProgress(0);
-                  }}
-                >
-                  Close
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          <Button onClick={exportResults} className="flex items-center gap-2">
+          <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
+            <Upload className="h-4 w-4" />
+            Add Result
+          </Button>
+          <Button variant="outline" onClick={exportResultsToPDF} className="gap-2">
             <Download className="h-4 w-4" />
-            Export Results
+            Export PDF
           </Button>
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-3xl font-bold">{results.length}</p>
+      {/* Statistics Cards */}
+      {placementStats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Trophy className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Placements</p>
+                  <p className="text-2xl font-bold">{placementStats.totalPlacements}</p>
+                </div>
               </div>
-              <Award className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pass Rate</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {Math.round((results.filter(r => r.overallStatus === 'Pass').length / results.length) * 100)}%
-                </p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">ATKT Cases</p>
-                <p className="text-3xl font-bold text-yellow-600">
-                  {results.filter(r => r.overallStatus === 'ATKT').length}
-                </p>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Placement Rate</p>
+                  <p className="text-2xl font-bold">{placementStats.placementRate.toFixed(1)}%</p>
+                </div>
               </div>
-              <AlertTriangle className="h-8 w-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Average SGPA</p>
-                <p className="text-3xl font-bold">
-                  {(results.reduce((sum, r) => sum + r.sgpa, 0) / results.length).toFixed(2)}
-                </p>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Avg Package</p>
+                  <p className="text-2xl font-bold">₹{placementStats.averagePackage.toFixed(1)}L</p>
+                </div>
               </div>
-              <TrendingUp className="h-8 w-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <BarChart3 className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Top Package</p>
+                  <p className="text-2xl font-bold">₹{placementStats.topPackage}L</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or roll number..."
+          <div className="flex flex-col gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search by student name, ID, company, or position..." 
+                className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
               />
             </div>
-            <Select value={semesterFilter} onValueChange={setSemesterFilter}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by semester" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Semesters</SelectItem>
-                <SelectItem value="1">Semester 1</SelectItem>
-                <SelectItem value="2">Semester 2</SelectItem>
-                <SelectItem value="3">Semester 3</SelectItem>
-                <SelectItem value="4">Semester 4</SelectItem>
-                <SelectItem value="5">Semester 5</SelectItem>
-                <SelectItem value="6">Semester 6</SelectItem>
-                <SelectItem value="7">Semester 7</SelectItem>
-                <SelectItem value="8">Semester 8</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Status</SelectItem>
-                <SelectItem value="Pass">Pass</SelectItem>
-                <SelectItem value="ATKT">ATKT</SelectItem>
-                <SelectItem value="Fail">Fail</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* Filter Options */}
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                <span className="text-sm font-medium">Filters:</span>
+              </div>
+
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                  {branches.map(branch => (
+                    <SelectItem key={branch} value={branch}>
+                      {branch}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  {statuses.map(status => (
+                    <SelectItem key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Results Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Student Results ({filteredResults.length} students)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student Details</TableHead>
-                <TableHead>Academic Info</TableHead>
-                <TableHead>Performance</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Documents</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredResults.map((result) => (
-                <TableRow key={result.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{result.studentName}</p>
-                      <p className="text-sm text-muted-foreground">{result.rollNumber}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">Semester {result.semester}</p>
-                      <p className="text-sm text-muted-foreground">{result.branch}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">SGPA: {result.sgpa}</p>
-                      <p className="text-sm text-muted-foreground">CGPA: {result.cgpa}</p>
-                      <p className="text-xs text-muted-foreground">Attendance: {result.attendance}%</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(result.overallStatus)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {result.uploadedDocuments && result.uploadedDocuments.length > 0 ? (
-                        <div className="flex items-center gap-1">
-                          {getFileIcon(result.uploadedDocuments[0].fileType)}
-                          <span className="text-xs text-muted-foreground">
-                            {result.uploadedDocuments.length} file{result.uploadedDocuments.length > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No documents</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => setViewingResult(result)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-6xl">
-                          <DialogHeader>
-                            <DialogTitle>Detailed Results - {result.studentName}</DialogTitle>
-                          </DialogHeader>
-                          {viewingResult && (
-                            <Tabs defaultValue="marks" className="w-full">
-                              <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="marks">Subject Marks</TabsTrigger>
-                                <TabsTrigger value="documents">Documents</TabsTrigger>
-                                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                              </TabsList>
-                              
-                              <TabsContent value="marks" className="space-y-4">
-                                <div className="grid md:grid-cols-2 gap-4">
-                                  <Card>
-                                    <CardHeader>
-                                      <CardTitle className="text-lg">Academic Summary</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="space-y-2">
-                                        <div className="flex justify-between">
-                                          <span>SGPA:</span>
-                                          <span className="font-bold">{viewingResult.sgpa}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span>CGPA:</span>
-                                          <span className="font-bold">{viewingResult.cgpa}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span>Status:</span>
-                                          {getStatusBadge(viewingResult.overallStatus)}
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span>Attendance:</span>
-                                          <span className="font-bold">{viewingResult.attendance}%</span>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                  
-                                  <Card>
-                                    <CardHeader>
-                                      <CardTitle className="text-lg">Subject Performance</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="space-y-3">
-                                        {mockSubjects.map((subject) => {
-                                          const subjectResult = viewingResult.subjects[subject.id];
-                                          return (
-                                            <div key={subject.id} className="flex justify-between items-center p-2 bg-muted rounded">
-                                              <div>
-                                                <p className="font-medium text-sm">{subject.name}</p>
-                                                <p className="text-xs text-muted-foreground">{subject.code}</p>
-                                              </div>
-                                              <div className="text-right">
-                                                <p className="font-bold">{subjectResult?.marks || 0}</p>
-                                                <Badge variant={subjectResult?.status === 'Pass' ? 'default' : 'destructive'} className="text-xs">
-                                                  {subjectResult?.grade || 'N/A'}
-                                                </Badge>
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              </TabsContent>
-                              
-                              <TabsContent value="documents" className="space-y-4">
-                                {viewingResult.uploadedDocuments && viewingResult.uploadedDocuments.length > 0 ? (
-                                  <div className="grid md:grid-cols-2 gap-4">
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="text-lg">Uploaded Documents</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="space-y-3">
-                                          {viewingResult.uploadedDocuments.map((doc, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                                              <div className="flex items-center gap-2">
-                                                {getFileIcon(doc.fileType)}
-                                                <div>
-                                                  <p className="font-medium text-sm">{doc.fileName}</p>
-                                                  <p className="text-xs text-muted-foreground">
-                                                    Uploaded {doc.uploadDate.toLocaleDateString()}
-                                                  </p>
-                                                </div>
-                                              </div>
-                                              <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => setSelectedDocument(doc.fileUrl)}
-                                              >
-                                                <Eye className="h-4 w-4" />
-                                              </Button>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                    
-                                    <Card>
-                                      <CardHeader>
-                                        <CardTitle className="text-lg">Document Preview</CardTitle>
-                                      </CardHeader>
-                                      <CardContent>
-                                        {selectedDocument ? (
-                                          <div className="space-y-2">
-                                            {renderDocument(viewingResult.uploadedDocuments?.find(doc => doc.fileUrl === selectedDocument))}
-                                          </div>
-                                        ) : (
-                                          <div className="text-center text-muted-foreground py-8">
-                                            Select a document to preview
-                                          </div>
-                                        )}
-                                      </CardContent>
-                                    </Card>
-                                  </div>
-                                ) : (
-                                  <Card>
-                                    <CardContent className="text-center py-8">
-                                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                      <h3 className="font-medium mb-2">No Documents Uploaded</h3>
-                                      <p className="text-muted-foreground">No result documents have been uploaded for this student.</p>
-                                    </CardContent>
-                                  </Card>
-                                )}
-                              </TabsContent>
-                              
-                              <TabsContent value="analytics" className="space-y-4">
-                                <div className="grid md:grid-cols-3 gap-4">
-                                  <Card>
-                                    <CardContent className="pt-6 text-center">
-                                      <p className="text-2xl font-bold text-green-600">
-                                        {Object.values(viewingResult.subjects).filter(s => s.status === 'Pass').length}
-                                      </p>
-                                      <p className="text-sm text-muted-foreground">Passed Subjects</p>
-                                    </CardContent>
-                                  </Card>
-                                  <Card>
-                                    <CardContent className="pt-6 text-center">
-                                      <p className="text-2xl font-bold text-red-600">
-                                        {Object.values(viewingResult.subjects).filter(s => s.status === 'Fail').length}
-                                      </p>
-                                      <p className="text-sm text-muted-foreground">Failed Subjects</p>
-                                    </CardContent>
-                                  </Card>
-                                  <Card>
-                                    <CardContent className="pt-6 text-center">
-                                      <p className="text-2xl font-bold">
-                                        {(Object.values(viewingResult.subjects).reduce((sum, s) => sum + s.marks, 0) / Object.values(viewingResult.subjects).length).toFixed(1)}
-                                      </p>
-                                      <p className="text-sm text-muted-foreground">Average Marks</p>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              </TabsContent>
-                            </Tabs>
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleEditMarks(result)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl">
-                          <DialogHeader>
-                            <DialogTitle>Edit Marks - {result.studentName}</DialogTitle>
-                          </DialogHeader>
-                          {editingResult && (
-                            <div className="space-y-4">
-                              <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                  <p><strong>Roll Number:</strong> {editingResult.rollNumber}</p>
-                                  <p><strong>Semester:</strong> {editingResult.semester}</p>
-                                </div>
-                                <div>
-                                  <p><strong>Current SGPA:</strong> {editingResult.sgpa}</p>
-                                  <p><strong>Status:</strong> {editingResult.overallStatus}</p>
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-4">
-                                <h4 className="font-medium">Subject Marks</h4>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                  {mockSubjects.map((subject) => (
-                                    <div key={subject.id} className="space-y-2">
-                                      <Label htmlFor={subject.id}>
-                                        {subject.name} ({subject.code}) - Max: {subject.maxMarks}
-                                      </Label>
-                                      <Input
-                                        id={subject.id}
-                                        type="number"
-                                        min="0"
-                                        max={subject.maxMarks}
-                                        value={editedMarks[subject.id] || 0}
-                                        onChange={(e) => setEditedMarks(prev => ({
-                                          ...prev,
-                                          [subject.id]: Number(e.target.value)
-                                        }))}
-                                        className="w-full"
-                                      />
-                                      <div className="flex justify-between text-sm text-muted-foreground">
-                                        <span>Grade: {getGradeFromMarks(editedMarks[subject.id] || 0)}</span>
-                                        <span>Status: {getStatusFromMarks(editedMarks[subject.id] || 0)}</span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              
-                              <div className="bg-muted p-4 rounded-lg">
-                                <h4 className="font-medium mb-2">Updated Summary</h4>
-                                <div className="grid md:grid-cols-3 gap-4 text-sm">
-                                  <div>
-                                    <strong>New SGPA:</strong> {calculateSGPA(Object.keys(editedMarks).reduce((acc, subjectId) => {
-                                      acc[subjectId] = {
-                                        marks: editedMarks[subjectId],
-                                        grade: getGradeFromMarks(editedMarks[subjectId]),
-                                        status: getStatusFromMarks(editedMarks[subjectId])
-                                      };
-                                      return acc;
-                                    }, {} as StudentResult['subjects']))}
-                                  </div>
-                                  <div>
-                                    <strong>Failed Subjects:</strong> {Object.values(editedMarks).filter(marks => marks < 40).length}
-                                  </div>
-                                  <div>
-                                    <strong>New Status:</strong> {Object.values(editedMarks).some(marks => marks < 40) ? 'ATKT' : 'Pass'}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setEditingResult(null)}>
-                              <X className="h-4 w-4 mr-1" />
-                              Cancel
-                            </Button>
-                            <Button onClick={handleSaveMarks}>
-                              <Save className="h-4 w-4 mr-1" />
-                              Save Changes
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </TableCell>
+        <CardContent className="pt-6">
+          {filteredResults.length === 0 ? (
+            <div className="text-center py-20">
+              <Trophy className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No results found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Try adjusting your search or filter criteria.
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student Details</TableHead>
+                  <TableHead>Company & Role</TableHead>
+                  <TableHead>Package</TableHead>
+                  <TableHead>Status & Location</TableHead>
+                  <TableHead>Date Added</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredResults.map((result) => (
+                  <TableRow key={result.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-semibold">{result.studentName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {result.studentId} • {result.branch}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{result.company}</div>
+                        <div className="text-sm text-muted-foreground">{result.position}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-semibold">₹{result.packageAmount} LPA</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <Badge className={getStatusColor(result.status)}>
+                          {result.status}
+                        </Badge>
+                        {result.location && (
+                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {result.location}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {formatDate(result.uploadedAt)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleViewResult(result)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
-      {/* Subject-wise Analysis */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Subject-wise Performance Analysis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {mockSubjects.map((subject) => {
-              const subjectResults = filteredResults.map(r => r.subjects[subject.id]?.marks || 0);
-              const average = subjectResults.reduce((sum, marks) => sum + marks, 0) / subjectResults.length;
-              const passCount = subjectResults.filter(marks => marks >= 40).length;
-              const passRate = (passCount / subjectResults.length) * 100;
+      {/* Upload Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Student Result</DialogTitle>
+            <DialogDescription>
+              Upload placement result or manually enter details. You can upload an image for automatic data extraction.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* File Upload */}
+            <div className="space-y-2">
+              <Label>Upload Result Document (Optional)</Label>
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <FileImage className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Upload an image for automatic data extraction
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <Label
+                    htmlFor="file-upload"
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 cursor-pointer"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Choose Image
+                  </Label>
+                </div>
+                {uploadedFile && (
+                  <p className="mt-2 text-sm font-medium text-green-600">
+                    ✓ {uploadedFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
 
-              return (
-                <div key={subject.id} className="p-4 bg-muted rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium">{subject.name} ({subject.code})</h4>
-                    <Badge variant="outline">{subject.credits} Credits</Badge>
-                  </div>
-                  <div className="grid md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Average Marks:</span>
-                      <span className="ml-2 font-medium">{average.toFixed(1)}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Pass Rate:</span>
-                      <span className="ml-2 font-medium">{passRate.toFixed(1)}%</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Highest Score:</span>
-                      <span className="ml-2 font-medium">{Math.max(...subjectResults)}</span>
-                    </div>
+            {/* Form Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="studentId">Student ID *</Label>
+                <Input
+                  id="studentId"
+                  placeholder="Enter student ID (e.g., KM1234)"
+                  value={uploadForm.studentId}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, studentId: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company">Company *</Label>
+                <Input
+                  id="company"
+                  placeholder="Company name"
+                  value={uploadForm.company}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, company: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="position">Position</Label>
+                <Input
+                  id="position"
+                  placeholder="Job position/role"
+                  value={uploadForm.position}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, position: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="package">Package (LPA)</Label>
+                <Input
+                  id="package"
+                  type="number"
+                  placeholder="0.00"
+                  value={uploadForm.packageAmount}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, packageAmount: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  placeholder="Work location"
+                  value={uploadForm.location}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, location: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="resultType">Result Type</Label>
+                <Select value={uploadForm.resultType} onValueChange={(value: any) => setUploadForm(prev => ({ ...prev, resultType: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="placement">Placement</SelectItem>
+                    <SelectItem value="internship">Internship</SelectItem>
+                    <SelectItem value="higher_studies">Higher Studies</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={uploadForm.status} onValueChange={(value: any) => setUploadForm(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="placed">Placed</SelectItem>
+                  <SelectItem value="selected">Selected</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Additional Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Any additional information..."
+                value={uploadForm.notes}
+                onChange={(e) => setUploadForm(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-between pt-4 border-t">
+              <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUploadResult} disabled={isUploading}>
+                {isUploading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Adding...
+                  </>
+                ) : (
+                  'Add Result'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Result Detail Dialog */}
+      <Dialog open={resultDetailOpen} onOpenChange={setResultDetailOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Result Details</DialogTitle>
+            <DialogDescription>
+              Complete information about the placement result.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedResult && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Student Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Name:</strong> {selectedResult.studentName}</p>
+                    <p><strong>Student ID:</strong> {selectedResult.studentId}</p>
+                    <p><strong>Email:</strong> {selectedResult.email}</p>
+                    <p><strong>Branch:</strong> {selectedResult.branch}</p>
+                    <p><strong>Year:</strong> {selectedResult.year}</p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Placement Details</h4>
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Company:</strong> {selectedResult.company}</p>
+                    <p><strong>Position:</strong> {selectedResult.position}</p>
+                    <p><strong>Package:</strong> ₹{selectedResult.packageAmount} LPA</p>
+                    <p><strong>Location:</strong> {selectedResult.location || 'N/A'}</p>
+                    <p>
+                      <strong>Status:</strong>{' '}
+                      <Badge className={getStatusColor(selectedResult.status)}>
+                        {selectedResult.status}
+                      </Badge>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedResult.notes && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Notes</h4>
+                  <p className="text-sm bg-muted p-3 rounded-md">{selectedResult.notes}</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <h4 className="font-semibold">Upload Information</h4>
+                <div className="text-sm space-y-1">
+                  <p><strong>Uploaded by:</strong> {selectedResult.uploadedBy}</p>
+                  <p><strong>Upload date:</strong> {formatDate(selectedResult.uploadedAt)}</p>
+                  <div className="flex items-center gap-2">
+                    <strong>Verification:</strong>
+                    {selectedResult.verified ? (
+                      <Badge className="bg-green-100 text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Pending Verification
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

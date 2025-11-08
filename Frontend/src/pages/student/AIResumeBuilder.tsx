@@ -1,351 +1,642 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { StudentService } from '@/services/firebaseService';
 import { 
-  FileText, 
   Download, 
-  Upload, 
-  Wand2, 
   Eye, 
-  Edit, 
+  Plus, 
+  X, 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin,
+  GraduationCap,
+  Award,
+  Code,
+  Building2,
+  Calendar,
+  Edit,
   Save,
-  Plus,
-  X,
-  Lightbulb,
-  Brain,
-  Target,
-  Zap,
-  Check,
-  Sparkles
+  FileText,
+  Palette
 } from 'lucide-react';
 
-const AIResumeBuilder = () => {
-  const { toast } = useToast();
-  const [activeStep, setActiveStep] = useState(0);
-  const [generatingResume, setGeneratingResume] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState(false);
+interface Experience {
+  id: string;
+  company: string;
+  position: string;
+  duration: string;
+  description: string;
+}
 
-  const [resumeData, setResumeData] = useState({
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  technologies: string[];
+  link?: string;
+}
+
+interface Education {
+  id: string;
+  institution: string;
+  degree: string;
+  fieldOfStudy: string;
+  startYear: string;
+  endYear: string;
+  cgpa?: string;
+}
+
+interface ResumeData {
+  personalInfo: {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    linkedin?: string;
+    github?: string;
+    portfolio?: string;
+  };
+  summary: string;
+  education: Education[];
+  experience: Experience[];
+  projects: Project[];
+  skills: string[];
+  certifications: string[];
+  achievements: string[];
+}
+
+const resumeTemplates = {
+  modern: {
+    name: 'Modern Professional',
+    description: 'Clean, modern design with accent colors',
+    color: 'blue'
+  },
+  classic: {
+    name: 'Classic Formal',
+    description: 'Traditional professional layout',
+    color: 'gray'
+  },
+  creative: {
+    name: 'Creative Tech',
+    description: 'Bold design for tech professionals',
+    color: 'purple'
+  },
+  minimal: {
+    name: 'Minimal Clean',
+    description: 'Minimalist approach with focus on content',
+    color: 'green'
+  }
+};
+
+const AIResumeBuilder = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const resumeRef = useRef<HTMLDivElement>(null);
+  
+  const [studentData, setStudentData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedTemplate, setSelectedTemplate] = useState('modern');
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
-      name: 'John Smith',
-      email: 'john.smith@college.edu',
-      phone: '+91 98765 43210',
-      location: 'Mumbai, Maharashtra',
-      linkedIn: 'linkedin.com/in/johnsmith',
-      github: 'github.com/johnsmith',
-      portfolio: 'johnsmith.dev'
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      linkedin: '',
+      github: '',
+      portfolio: ''
     },
-    objective: 'Passionate software developer seeking opportunities to apply my technical skills and contribute to innovative projects in a dynamic technology company.',
-    education: [
-      {
-        degree: 'B.Tech Computer Science Engineering',
-        institution: 'ABC Engineering College',
-        duration: '2021-2025',
-        cgpa: '8.75'
-      }
-    ],
-    experience: [
-      {
-        title: 'Software Development Intern',
-        company: 'TechCorp Solutions',
-        duration: 'Jun 2024 - Aug 2024',
-        description: 'Developed web applications using React and Node.js, collaborated with cross-functional teams, and improved application performance by 30%.'
-      }
-    ],
-    projects: [
-      {
-        title: 'E-commerce Platform',
-        duration: 'Jun 2024 - Aug 2024',
-        description: 'Built a full-stack e-commerce application with user authentication, payment integration, and admin dashboard using MERN stack.',
-        technologies: ['React', 'Node.js', 'MongoDB', 'Express']
-      }
-    ],
-    skills: {
-      technical: ['JavaScript', 'Python', 'Java', 'React', 'Node.js', 'MongoDB'],
-      soft: ['Communication', 'Problem Solving', 'Team Leadership', 'Time Management']
-    },
-    certifications: [
-      {
-        name: 'AWS Certified Developer Associate',
-        issuer: 'Amazon Web Services',
-        date: 'December 2023'
-      }
-    ]
+    summary: '',
+    education: [],
+    experience: [],
+    projects: [],
+    skills: [],
+    certifications: [],
+    achievements: []
   });
 
-  const [templates] = useState([
-    {
-      id: 1,
-      name: 'Professional',
-      description: 'Clean and modern design perfect for tech roles',
-      preview: '/resume-templates/professional.png',
-      category: 'Modern'
-    },
-    {
-      id: 2,
-      name: 'Creative',
-      description: 'Eye-catching design for creative positions',
-      preview: '/resume-templates/creative.png',
-      category: 'Creative'
-    },
-    {
-      id: 3,
-      name: 'Minimalist',
-      description: 'Simple and elegant layout',
-      preview: '/resume-templates/minimalist.png',
-      category: 'Classic'
-    },
-    {
-      id: 4,
-      name: 'Executive',
-      description: 'Sophisticated design for senior roles',
-      preview: '/resume-templates/executive.png',
-      category: 'Professional'
-    }
-  ]);
+  // Load student data and populate resume
+  useEffect(() => {
+    const loadStudentData = async () => {
+      if (!user?.studentId) return;
+      
+      try {
+        setLoading(true);
+        const data = await StudentService.getStudentByStudentId(user.studentId);
+        setStudentData(data);
+        
+        if (data) {
+          // Pre-populate resume with student data
+          setResumeData({
+            personalInfo: {
+              name: data.name || '',
+              email: data.email || '',
+              phone: data.phone || '',
+              address: data.address || '',
+              linkedin: data.linkedin || '',
+              github: data.githubProfile?.username ? `https://github.com/${data.githubProfile.username}` : '',
+              portfolio: data.portfolio || ''
+            },
+            summary: data.about || '',
+            education: data.education || [{
+              id: '1',
+              institution: data.college || '',
+              degree: data.degree || 'Bachelor of Technology',
+              fieldOfStudy: data.branch || '',
+              startYear: '',
+              endYear: '',
+              cgpa: data.cgpa?.toString() || ''
+            }],
+            experience: data.experience || [],
+            projects: data.projects || (data.githubProfile?.repos ? 
+              data.githubProfile.repos.slice(0, 3).map((repo: any, index: number) => ({
+                id: (index + 1).toString(),
+                title: repo.name,
+                description: repo.description || 'Project description',
+                technologies: repo.language ? [repo.language] : [],
+                link: repo.html_url
+              })) : []
+            ),
+            skills: data.skillSet || [],
+            certifications: data.certifications || [],
+            achievements: data.achievements || []
+          });
+        }
+      } catch (error) {
+        console.error('Error loading student data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load student data",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const [selectedTemplate, setSelectedTemplate] = useState(1);
+    loadStudentData();
+  }, [user, toast]);
 
-  const resumeSteps = [
-    { id: 0, title: 'Template', description: 'Choose a template' },
-    { id: 1, title: 'Personal Info', description: 'Basic information' },
-    { id: 2, title: 'Experience', description: 'Work experience' },
-    { id: 3, title: 'Education', description: 'Educational background' },
-    { id: 4, title: 'Skills', description: 'Technical & soft skills' },
-    { id: 5, title: 'Projects', description: 'Personal projects' },
-    { id: 6, title: 'Review', description: 'Final review' }
-  ];
-
-  const handleGenerateWithAI = () => {
-    setGeneratingResume(true);
-    toast({
-      title: "AI Resume Generation Started",
-      description: "Our AI is analyzing your profile and generating an optimized resume...",
+  const addExperience = () => {
+    const newExp: Experience = {
+      id: Date.now().toString(),
+      company: '',
+      position: '',
+      duration: '',
+      description: ''
+    };
+    setResumeData({
+      ...resumeData,
+      experience: [...resumeData.experience, newExp]
     });
-    
-    setTimeout(() => {
-      setGeneratingResume(false);
-      toast({
-        title: "Resume Generated Successfully",
-        description: "Your AI-optimized resume is ready for review!",
+  };
+
+  const addProject = () => {
+    const newProject: Project = {
+      id: Date.now().toString(),
+      title: '',
+      description: '',
+      technologies: []
+    };
+    setResumeData({
+      ...resumeData,
+      projects: [...resumeData.projects, newProject]
+    });
+  };
+
+  const addEducation = () => {
+    const newEdu: Education = {
+      id: Date.now().toString(),
+      institution: '',
+      degree: '',
+      fieldOfStudy: '',
+      startYear: '',
+      endYear: '',
+      cgpa: ''
+    };
+    setResumeData({
+      ...resumeData,
+      education: [...resumeData.education, newEdu]
+    });
+  };
+
+  const removeItem = (type: string, id: string) => {
+    setResumeData({
+      ...resumeData,
+      [type]: resumeData[type as keyof ResumeData].filter((item: any) => item.id !== id)
+    });
+  };
+
+  const updateExperience = (id: string, field: string, value: string) => {
+    setResumeData({
+      ...resumeData,
+      experience: resumeData.experience.map(exp => 
+        exp.id === id ? { ...exp, [field]: value } : exp
+      )
+    });
+  };
+
+  const updateProject = (id: string, field: string, value: any) => {
+    setResumeData({
+      ...resumeData,
+      projects: resumeData.projects.map(project => 
+        project.id === id ? { ...project, [field]: value } : project
+      )
+    });
+  };
+
+  const updateEducation = (id: string, field: string, value: string) => {
+    setResumeData({
+      ...resumeData,
+      education: resumeData.education.map(edu => 
+        edu.id === id ? { ...edu, [field]: value } : edu
+      )
+    });
+  };
+
+  const addSkill = (skill: string) => {
+    if (skill.trim() && !resumeData.skills.includes(skill.trim())) {
+      setResumeData({
+        ...resumeData,
+        skills: [...resumeData.skills, skill.trim()]
       });
-    }, 3000);
-  };
-
-  const handleGetAISuggestions = () => {
-    setAiSuggestions(true);
-    toast({
-      title: "AI Suggestions Loading",
-      description: "Getting AI-powered suggestions to improve your resume...",
-    });
-    
-    setTimeout(() => {
-      setAiSuggestions(false);
-      toast({
-        title: "AI Suggestions Ready",
-        description: "Check the suggestions panel for improvements!",
-      });
-    }, 2000);
-  };
-
-  const handleDownload = (format: string) => {
-    toast({
-      title: "Download Started",
-      description: `Downloading resume in ${format.toUpperCase()} format...`,
-    });
-  };
-
-  const aiSuggestionsData = [
-    {
-      section: 'Objective',
-      suggestion: 'Consider making your objective more specific to the role you\'re targeting',
-      type: 'improvement'
-    },
-    {
-      section: 'Experience',
-      suggestion: 'Add quantifiable achievements to your work experience',
-      type: 'enhancement'
-    },
-    {
-      section: 'Skills',
-      suggestion: 'Include more industry-relevant technologies like Docker, Kubernetes',
-      type: 'addition'
-    },
-    {
-      section: 'Projects',
-      suggestion: 'Highlight the impact and results of your projects',
-      type: 'improvement'
     }
-  ];
+  };
+
+  const removeSkill = (skill: string) => {
+    setResumeData({
+      ...resumeData,
+      skills: resumeData.skills.filter(s => s !== skill)
+    });
+  };
+
+  const generatePDF = async () => {
+    setIsGenerating(true);
+    try {
+      // Save current resume data to student profile
+      await StudentService.updateStudent(user?.studentId || '', {
+        resumeData: resumeData,
+        lastResumeUpdate: new Date()
+      });
+
+      // Generate PDF (this would typically use a PDF library like jsPDF or Puppeteer)
+      const resumeHTML = generateResumeHTML();
+      const blob = new Blob([resumeHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${resumeData.personalInfo.name.replace(/\s+/g, '_')}_Resume.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Resume Generated",
+        description: "Your resume has been downloaded successfully!"
+      });
+    } catch (error) {
+      console.error('Error generating resume:', error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate resume",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateResumeHTML = () => {
+    const templateColors = {
+      modern: '#3B82F6',
+      classic: '#374151',
+      creative: '#8B5CF6',
+      minimal: '#10B981'
+    };
+
+    const primaryColor = templateColors[selectedTemplate as keyof typeof templateColors];
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${resumeData.personalInfo.name} - Resume</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .resume {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: ${primaryColor};
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 2.5em;
+    }
+    .contact-info {
+      margin: 10px 0;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .section {
+      padding: 20px 30px;
+      border-bottom: 1px solid #eee;
+    }
+    .section h2 {
+      color: ${primaryColor};
+      margin-bottom: 15px;
+      border-bottom: 2px solid ${primaryColor};
+      padding-bottom: 5px;
+    }
+    .experience-item, .project-item, .education-item {
+      margin-bottom: 20px;
+    }
+    .experience-item h3, .project-item h3, .education-item h3 {
+      margin: 0 0 5px 0;
+      color: #333;
+    }
+    .skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .skill-tag {
+      background: ${primaryColor};
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 0.9em;
+    }
+    .date {
+      color: #666;
+      font-style: italic;
+    }
+    ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="resume">
+    <div class="header">
+      <h1>${resumeData.personalInfo.name}</h1>
+      <div class="contact-info">
+        <span>${resumeData.personalInfo.email}</span>
+        <span>${resumeData.personalInfo.phone}</span>
+        ${resumeData.personalInfo.address ? `<span>${resumeData.personalInfo.address}</span>` : ''}
+        ${resumeData.personalInfo.linkedin ? `<span>${resumeData.personalInfo.linkedin}</span>` : ''}
+        ${resumeData.personalInfo.github ? `<span>${resumeData.personalInfo.github}</span>` : ''}
+      </div>
+    </div>
+
+    ${resumeData.summary ? `
+    <div class="section">
+      <h2>Professional Summary</h2>
+      <p>${resumeData.summary}</p>
+    </div>
+    ` : ''}
+
+    <div class="section">
+      <h2>Education</h2>
+      ${resumeData.education.map(edu => `
+        <div class="education-item">
+          <h3>${edu.degree} in ${edu.fieldOfStudy}</h3>
+          <p><strong>${edu.institution}</strong></p>
+          <p class="date">${edu.startYear} - ${edu.endYear}</p>
+          ${edu.cgpa ? `<p>CGPA: ${edu.cgpa}</p>` : ''}
+        </div>
+      `).join('')}
+    </div>
+
+    ${resumeData.experience.length > 0 ? `
+    <div class="section">
+      <h2>Experience</h2>
+      ${resumeData.experience.map(exp => `
+        <div class="experience-item">
+          <h3>${exp.position}</h3>
+          <p><strong>${exp.company}</strong> <span class="date">${exp.duration}</span></p>
+          <p>${exp.description}</p>
+        </div>
+      `).join('')}
+    </div>
+    ` : ''}
+
+    ${resumeData.projects.length > 0 ? `
+    <div class="section">
+      <h2>Projects</h2>
+      ${resumeData.projects.map(project => `
+        <div class="project-item">
+          <h3>${project.title}</h3>
+          <p>${project.description}</p>
+          ${project.technologies.length > 0 ? `
+            <p><strong>Technologies:</strong> ${project.technologies.join(', ')}</p>
+          ` : ''}
+          ${project.link ? `<p><strong>Link:</strong> <a href="${project.link}">${project.link}</a></p>` : ''}
+        </div>
+      `).join('')}
+    </div>
+    ` : ''}
+
+    ${resumeData.skills.length > 0 ? `
+    <div class="section">
+      <h2>Skills</h2>
+      <div class="skills">
+        ${resumeData.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    ${resumeData.achievements.length > 0 ? `
+    <div class="section">
+      <h2>Achievements</h2>
+      <ul>
+        ${resumeData.achievements.map(achievement => `<li>${achievement}</li>`).join('')}
+      </ul>
+    </div>
+    ` : ''}
+
+    ${resumeData.certifications.length > 0 ? `
+    <div class="section">
+      <h2>Certifications</h2>
+      <ul>
+        ${resumeData.certifications.map(cert => `<li>${cert}</li>`).join('')}
+      </ul>
+    </div>
+    ` : ''}
+  </div>
+</body>
+</html>
+    `;
+  };
+
+  const ResumePreview = () => (
+    <div className="w-full max-w-4xl mx-auto bg-white shadow-lg" ref={resumeRef}>
+      <div 
+        className="text-white p-8 text-center"
+        style={{ backgroundColor: selectedTemplate === 'modern' ? '#3B82F6' : 
+                 selectedTemplate === 'classic' ? '#374151' : 
+                 selectedTemplate === 'creative' ? '#8B5CF6' : '#10B981' }}
+      >
+        <h1 className="text-3xl font-bold">{resumeData.personalInfo.name}</h1>
+        <div className="mt-4 flex justify-center flex-wrap gap-4 text-sm">
+          <span>{resumeData.personalInfo.email}</span>
+          <span>{resumeData.personalInfo.phone}</span>
+          {resumeData.personalInfo.address && <span>{resumeData.personalInfo.address}</span>}
+        </div>
+      </div>
+      
+      <div className="p-8 space-y-6">
+        {resumeData.summary && (
+          <section>
+            <h2 className="text-xl font-bold mb-3 border-b-2 border-primary pb-1">Professional Summary</h2>
+            <p className="text-gray-700">{resumeData.summary}</p>
+          </section>
+        )}
+
+        <section>
+          <h2 className="text-xl font-bold mb-3 border-b-2 border-primary pb-1">Education</h2>
+          {resumeData.education.map(edu => (
+            <div key={edu.id} className="mb-4">
+              <h3 className="font-semibold">{edu.degree} in {edu.fieldOfStudy}</h3>
+              <p className="text-gray-600">{edu.institution}</p>
+              <p className="text-sm text-gray-500">{edu.startYear} - {edu.endYear}</p>
+              {edu.cgpa && <p className="text-sm">CGPA: {edu.cgpa}</p>}
+            </div>
+          ))}
+        </section>
+
+        {resumeData.experience.length > 0 && (
+          <section>
+            <h2 className="text-xl font-bold mb-3 border-b-2 border-primary pb-1">Experience</h2>
+            {resumeData.experience.map(exp => (
+              <div key={exp.id} className="mb-4">
+                <h3 className="font-semibold">{exp.position}</h3>
+                <p className="text-gray-600">{exp.company} • {exp.duration}</p>
+                <p className="text-sm text-gray-700">{exp.description}</p>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {resumeData.projects.length > 0 && (
+          <section>
+            <h2 className="text-xl font-bold mb-3 border-b-2 border-primary pb-1">Projects</h2>
+            {resumeData.projects.map(project => (
+              <div key={project.id} className="mb-4">
+                <h3 className="font-semibold">{project.title}</h3>
+                <p className="text-sm text-gray-700">{project.description}</p>
+                {project.technologies.length > 0 && (
+                  <div className="mt-2">
+                    <strong className="text-sm">Technologies: </strong>
+                    <span className="text-sm">{project.technologies.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
+
+        {resumeData.skills.length > 0 && (
+          <section>
+            <h2 className="text-xl font-bold mb-3 border-b-2 border-primary pb-1">Skills</h2>
+            <div className="flex flex-wrap gap-2">
+              {resumeData.skills.map(skill => (
+                <Badge key={skill} variant="secondary">{skill}</Badge>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <Brain className="h-8 w-8 text-primary" />
-            AI Resume Builder
-          </h1>
-          <p className="text-muted-foreground">Create professional resumes with AI-powered suggestions</p>
+          <h1 className="text-3xl font-bold mb-2">Resume Builder</h1>
+          <p className="text-muted-foreground">Create professional resumes with AI-powered templates</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleGetAISuggestions} disabled={aiSuggestions}>
-            {aiSuggestions ? (
-              <>
-                <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                Getting Suggestions...
-              </>
-            ) : (
-              <>
-                <Lightbulb className="h-4 w-4 mr-2" />
-                Get AI Suggestions
-              </>
-            )}
+        <div className="space-x-2">
+          <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
           </Button>
-          <Button onClick={handleGenerateWithAI} disabled={generatingResume}>
-            {generatingResume ? (
-              <>
-                <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Wand2 className="h-4 w-4 mr-2" />
-                Generate with AI
-              </>
-            )}
+          <Button onClick={generatePDF} disabled={isGenerating}>
+            <Download className="h-4 w-4 mr-2" />
+            {isGenerating ? 'Generating...' : 'Download PDF'}
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left Sidebar - Steps */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Resume Builder Steps</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {resumeSteps.map((step) => (
-                  <div
-                    key={step.id}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      activeStep === step.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted'
-                    }`}
-                    onClick={() => setActiveStep(step.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                        activeStep === step.id
-                          ? 'bg-primary-foreground text-primary'
-                          : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {step.id + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{step.title}</p>
-                        <p className={`text-xs ${
-                          activeStep === step.id
-                            ? 'text-primary-foreground/80'
-                            : 'text-muted-foreground'
-                        }`}>
-                          {step.description}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Resume Builder Form */}
+        <div className="lg:col-span-2 space-y-6">
+          <Tabs defaultValue="personal" className="w-full">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="personal">Personal</TabsTrigger>
+              <TabsTrigger value="education">Education</TabsTrigger>
+              <TabsTrigger value="experience">Experience</TabsTrigger>
+              <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="skills">Skills</TabsTrigger>
+              <TabsTrigger value="extras">Extras</TabsTrigger>
+            </TabsList>
 
-          {/* AI Suggestions Panel */}
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                AI Suggestions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {aiSuggestionsData.map((suggestion, index) => (
-                  <div key={index} className="p-3 bg-muted rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Lightbulb className="h-4 w-4 text-amber-500 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-xs text-primary">{suggestion.section}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{suggestion.suggestion}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="lg:col-span-3">
-          <Tabs value={activeStep.toString()} className="space-y-6">
-            {/* Template Selection */}
-            <TabsContent value="0" className="space-y-6">
+            <TabsContent value="personal" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Choose Your Resume Template</CardTitle>
-                  <p className="text-muted-foreground">Select a template that best fits your career goals</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {templates.map((template) => (
-                      <div
-                        key={template.id}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          selectedTemplate === template.id
-                            ? 'border-primary bg-primary/5'
-                            : 'border-muted hover:border-primary/50'
-                        }`}
-                        onClick={() => setSelectedTemplate(template.id)}
-                      >
-                        <div className="aspect-[3/4] bg-muted rounded-lg mb-3 flex items-center justify-center">
-                          <FileText className="h-16 w-16 text-muted-foreground" />
-                        </div>
-                        <h3 className="font-semibold">{template.name}</h3>
-                        <p className="text-sm text-muted-foreground">{template.description}</p>
-                        <Badge variant="outline" className="mt-2">
-                          {template.category}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Personal Information */}
-            <TabsContent value="1" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <p className="text-muted-foreground">Enter your basic contact details</p>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Personal Information
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name">Full Name</Label>
+                    <div className="space-y-2">
+                      <Label>Full Name</Label>
                       <Input
-                        id="name"
                         value={resumeData.personalInfo.name}
                         onChange={(e) => setResumeData({
                           ...resumeData,
@@ -353,11 +644,9 @@ const AIResumeBuilder = () => {
                         })}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="email">Email</Label>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
                       <Input
-                        id="email"
-                        type="email"
                         value={resumeData.personalInfo.email}
                         onChange={(e) => setResumeData({
                           ...resumeData,
@@ -365,10 +654,9 @@ const AIResumeBuilder = () => {
                         })}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="phone">Phone</Label>
+                    <div className="space-y-2">
+                      <Label>Phone</Label>
                       <Input
-                        id="phone"
                         value={resumeData.personalInfo.phone}
                         onChange={(e) => setResumeData({
                           ...resumeData,
@@ -376,32 +664,29 @@ const AIResumeBuilder = () => {
                         })}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="location">Location</Label>
+                    <div className="space-y-2">
+                      <Label>Address</Label>
                       <Input
-                        id="location"
-                        value={resumeData.personalInfo.location}
+                        value={resumeData.personalInfo.address}
                         onChange={(e) => setResumeData({
                           ...resumeData,
-                          personalInfo: { ...resumeData.personalInfo, location: e.target.value }
+                          personalInfo: { ...resumeData.personalInfo, address: e.target.value }
                         })}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="linkedin">LinkedIn</Label>
+                    <div className="space-y-2">
+                      <Label>LinkedIn</Label>
                       <Input
-                        id="linkedin"
-                        value={resumeData.personalInfo.linkedIn}
+                        value={resumeData.personalInfo.linkedin}
                         onChange={(e) => setResumeData({
                           ...resumeData,
-                          personalInfo: { ...resumeData.personalInfo, linkedIn: e.target.value }
+                          personalInfo: { ...resumeData.personalInfo, linkedin: e.target.value }
                         })}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="github">GitHub</Label>
+                    <div className="space-y-2">
+                      <Label>GitHub</Label>
                       <Input
-                        id="github"
                         value={resumeData.personalInfo.github}
                         onChange={(e) => setResumeData({
                           ...resumeData,
@@ -410,140 +695,410 @@ const AIResumeBuilder = () => {
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label htmlFor="objective">Career Objective</Label>
+                  <div className="space-y-2">
+                    <Label>Professional Summary</Label>
                     <Textarea
-                      id="objective"
-                      rows={3}
-                      value={resumeData.objective}
-                      onChange={(e) => setResumeData({ ...resumeData, objective: e.target.value })}
-                      placeholder="Write a compelling career objective..."
+                      placeholder="Write a brief professional summary about yourself..."
+                      value={resumeData.summary}
+                      onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
+                      rows={4}
                     />
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Skills Section */}
-            <TabsContent value="4" className="space-y-6">
+            <TabsContent value="education" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Skills & Expertise</CardTitle>
-                  <p className="text-muted-foreground">List your technical and soft skills</p>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5" />
+                      Education
+                    </div>
+                    <Button size="sm" onClick={addEducation}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Education
+                    </Button>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <Label>Technical Skills</Label>
-                    <div className="flex flex-wrap gap-2 mt-2 mb-3">
-                      {resumeData.skills.technical.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                          {skill}
-                          <X className="h-3 w-3 cursor-pointer" />
-                        </Badge>
-                      ))}
+                <CardContent className="space-y-4">
+                  {resumeData.education.map((edu) => (
+                    <div key={edu.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium">Education Entry</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem('education', edu.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Institution</Label>
+                          <Input
+                            value={edu.institution}
+                            onChange={(e) => updateEducation(edu.id, 'institution', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Degree</Label>
+                          <Input
+                            value={edu.degree}
+                            onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Field of Study</Label>
+                          <Input
+                            value={edu.fieldOfStudy}
+                            onChange={(e) => updateEducation(edu.id, 'fieldOfStudy', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>CGPA/Grade</Label>
+                          <Input
+                            value={edu.cgpa}
+                            onChange={(e) => updateEducation(edu.id, 'cgpa', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Start Year</Label>
+                          <Input
+                            value={edu.startYear}
+                            onChange={(e) => updateEducation(edu.id, 'startYear', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>End Year</Label>
+                          <Input
+                            value={edu.endYear}
+                            onChange={(e) => updateEducation(edu.id, 'endYear', e.target.value)}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Input placeholder="Add a technical skill..." />
-                      <Button variant="outline">
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="experience" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      Work Experience
                     </div>
+                    <Button size="sm" onClick={addExperience}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Experience
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {resumeData.experience.map((exp) => (
+                    <div key={exp.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium">Experience Entry</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem('experience', exp.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Company</Label>
+                          <Input
+                            value={exp.company}
+                            onChange={(e) => updateExperience(exp.id, 'company', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Position</Label>
+                          <Input
+                            value={exp.position}
+                            onChange={(e) => updateExperience(exp.id, 'position', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label>Duration</Label>
+                          <Input
+                            placeholder="e.g., Jan 2023 - Dec 2023"
+                            value={exp.duration}
+                            onChange={(e) => updateExperience(exp.id, 'duration', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label>Description</Label>
+                          <Textarea
+                            placeholder="Describe your responsibilities and achievements..."
+                            value={exp.description}
+                            onChange={(e) => updateExperience(exp.id, 'description', e.target.value)}
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {resumeData.experience.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Building2 className="h-12 w-12 mx-auto mb-4" />
+                      <p>No work experience added yet.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="projects" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Code className="h-5 w-5" />
+                      Projects
+                    </div>
+                    <Button size="sm" onClick={addProject}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Project
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {resumeData.projects.map((project) => (
+                    <div key={project.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium">Project Entry</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem('projects', project.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label>Project Title</Label>
+                          <Input
+                            value={project.title}
+                            onChange={(e) => updateProject(project.id, 'title', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <Textarea
+                            placeholder="Describe your project and its key features..."
+                            value={project.description}
+                            onChange={(e) => updateProject(project.id, 'description', e.target.value)}
+                            rows={3}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Technologies Used</Label>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {project.technologies.map((tech, index) => (
+                              <Badge key={index} variant="secondary" className="cursor-pointer">
+                                {tech}
+                                <X 
+                                  className="h-3 w-3 ml-1" 
+                                  onClick={() => {
+                                    const newTechs = project.technologies.filter((_, i) => i !== index);
+                                    updateProject(project.id, 'technologies', newTechs);
+                                  }}
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                          <Input
+                            placeholder="Add technology and press Enter"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                const tech = e.currentTarget.value.trim();
+                                if (tech && !project.technologies.includes(tech)) {
+                                  updateProject(project.id, 'technologies', [...project.technologies, tech]);
+                                  e.currentTarget.value = '';
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Project Link (Optional)</Label>
+                          <Input
+                            placeholder="https://github.com/username/project"
+                            value={project.link || ''}
+                            onChange={(e) => updateProject(project.id, 'link', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="skills" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Code className="h-5 w-5" />
+                    Skills & Technologies
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Add Skills</Label>
+                    <Input
+                      placeholder="Type a skill and press Enter"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          addSkill(e.currentTarget.value);
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                    />
                   </div>
-                  
-                  <div>
-                    <Label>Soft Skills</Label>
-                    <div className="flex flex-wrap gap-2 mt-2 mb-3">
-                      {resumeData.skills.soft.map((skill, index) => (
-                        <Badge key={index} variant="outline" className="flex items-center gap-1">
-                          {skill}
-                          <X className="h-3 w-3 cursor-pointer" />
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <Input placeholder="Add a soft skill..." />
-                      <Button variant="outline">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    {resumeData.skills.map((skill) => (
+                      <Badge key={skill} variant="secondary" className="cursor-pointer">
+                        {skill}
+                        <X className="h-3 w-3 ml-1" onClick={() => removeSkill(skill)} />
+                      </Badge>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Final Review */}
-            <TabsContent value="6" className="space-y-6">
+            <TabsContent value="extras" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Resume Preview & Download</CardTitle>
-                  <p className="text-muted-foreground">Review your resume and download in your preferred format</p>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Additional Information
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {/* Preview Area */}
-                    <div className="border rounded-lg p-6 bg-white min-h-[600px]">
-                      <div className="text-center mb-6">
-                        <h2 className="text-2xl font-bold">{resumeData.personalInfo.name}</h2>
-                        <p className="text-muted-foreground">{resumeData.personalInfo.email} | {resumeData.personalInfo.phone}</p>
-                        <p className="text-muted-foreground">{resumeData.personalInfo.location}</p>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <h3 className="text-lg font-semibold mb-2 border-b">Objective</h3>
-                          <p className="text-sm">{resumeData.objective}</p>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-lg font-semibold mb-2 border-b">Technical Skills</h3>
-                          <div className="flex flex-wrap gap-2">
-                            {resumeData.skills.technical.map((skill, index) => (
-                              <Badge key={index} variant="secondary">{skill}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Download Options */}
-                    <div className="flex justify-center gap-4">
-                      <Button onClick={() => handleDownload('pdf')}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Download PDF
-                      </Button>
-                      <Button variant="outline" onClick={() => handleDownload('docx')}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Download DOCX
-                      </Button>
-                      <Button variant="outline">
-                        <Eye className="h-4 w-4 mr-2" />
-                        Preview
-                      </Button>
-                    </div>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Certifications</Label>
+                    <Textarea
+                      placeholder="List your certifications (one per line)"
+                      value={resumeData.certifications.join('\n')}
+                      onChange={(e) => setResumeData({
+                        ...resumeData,
+                        certifications: e.target.value.split('\n').filter(cert => cert.trim())
+                      })}
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Achievements & Awards</Label>
+                    <Textarea
+                      placeholder="List your achievements and awards (one per line)"
+                      value={resumeData.achievements.join('\n')}
+                      onChange={(e) => setResumeData({
+                        ...resumeData,
+                        achievements: e.target.value.split('\n').filter(achievement => achievement.trim())
+                      })}
+                      rows={4}
+                    />
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
+        </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
-              disabled={activeStep === 0}
-            >
-              Previous
-            </Button>
-            <Button
-              onClick={() => setActiveStep(Math.min(resumeSteps.length - 1, activeStep + 1))}
-              disabled={activeStep === resumeSteps.length - 1}
-            >
-              Next
-            </Button>
-          </div>
+        {/* Template Selection and Preview */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Resume Templates
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(resumeTemplates).map(([key, template]) => (
+                    <SelectItem key={key} value={key}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="mt-4 space-y-2">
+                {Object.entries(resumeTemplates).map(([key, template]) => (
+                  <div
+                    key={key}
+                    className={`p-3 border rounded cursor-pointer ${
+                      selectedTemplate === key ? 'border-primary bg-primary/5' : ''
+                    }`}
+                    onClick={() => setSelectedTemplate(key)}
+                  >
+                    <div className="font-medium">{template.name}</div>
+                    <div className="text-sm text-muted-foreground">{template.description}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full" onClick={() => setIsPreviewOpen(true)}>
+                <Eye className="h-4 w-4 mr-2" />
+                Preview Resume
+              </Button>
+              <Button 
+                className="w-full" 
+                onClick={generatePDF}
+                disabled={isGenerating}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {isGenerating ? 'Generating...' : 'Download Resume'}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Resume Preview</DialogTitle>
+            <DialogDescription>
+              Preview your resume before downloading
+            </DialogDescription>
+          </DialogHeader>
+          <ResumePreview />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={generatePDF} disabled={isGenerating}>
+              <Download className="h-4 w-4 mr-2" />
+              {isGenerating ? 'Generating...' : 'Download'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
