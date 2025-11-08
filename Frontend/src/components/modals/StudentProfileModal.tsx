@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Student } from '@/services/firebaseService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { 
@@ -20,62 +21,6 @@ import {
   Code,
   FileText
 } from 'lucide-react';
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  branch: string;
-  year: string;
-  cgpa: number;
-  placementStatus: string;
-  company?: string;
-  package?: string;
-  skillSet: string[];
-  location: string;
-  resumeScore: number;
-  applications: number;
-  offers: number;
-  profileDetails: {
-    rollNumber: string;
-    dateOfBirth: string;
-    address: string;
-    fatherName: string;
-    motherName: string;
-    emergencyContact: string;
-  };
-  academicDetails: {
-    tenthPercentage: number;
-    twelfthPercentage: number;
-    diplomaPercentage?: number;
-    backlogs: number;
-    projects: Array<{
-      title: string;
-      description: string;
-      technologies: string[];
-      duration: string;
-    }>;
-    internships: Array<{
-      company: string;
-      role: string;
-      duration: string;
-      description: string;
-    }>;
-    certifications: Array<{
-      name: string;
-      issuer: string;
-      date: string;
-    }>;
-  };
-  placementHistory: Array<{
-    company: string;
-    role: string;
-    applicationDate: string;
-    status: string;
-    currentRound: string;
-  }>;
-}
 
 interface StudentProfileModalProps {
   open: boolean;
@@ -134,7 +79,7 @@ const StudentProfileModal = ({ open, onOpenChange, student }: StudentProfileModa
       
       doc.setFontSize(12);
       doc.setTextColor(60);
-      const skillsText = student.skillSet.join(', ');
+      const skillsText = (student.skillSet || []).join(', ');
       const skillsLines = doc.splitTextToSize(skillsText, 170);
       doc.text(skillsLines, 20, 130);
 
@@ -164,240 +109,24 @@ const StudentProfileModal = ({ open, onOpenChange, student }: StudentProfileModa
         });
       }
 
-      // Placement Information
-      let placementY = 220;
-      if (student.placementStatus === 'Placed' && student.company) {
+      // Academic Details
+      if (student.academicDetails) {
         doc.setFontSize(16);
         doc.setTextColor(40);
-        doc.text('Placement Details', 20, placementY);
+        doc.text('Academic Performance', 20, 96);
         
         doc.setFontSize(12);
         doc.setTextColor(60);
-        doc.text(`Company: ${student.company}`, 20, placementY + 12);
-        doc.text(`Package: ${student.package}`, 20, placementY + 19);
-        doc.text(`Status: ${student.placementStatus}`, 20, placementY + 26);
+        if (student.academicDetails.tenthPercentage) {
+          doc.text(`10th Grade: ${student.academicDetails.tenthPercentage}%`, 20, 103);
+        }
+        if (student.academicDetails.twelfthPercentage) {
+          doc.text(`12th Grade: ${student.academicDetails.twelfthPercentage}%`, 20, 110);
+        }
+        if (student.academicDetails.backlogs !== undefined) {
+          doc.text(`Backlogs: ${student.academicDetails.backlogs}`, 20, 117);
+        }
       }
-
-      // Save the PDF
-      const fileName = `${student.name.replace(/\s+/g, '_')}_Resume.pdf`;
-      doc.save(fileName);
-
-      toast({
-        title: "Resume Downloaded",
-        description: `${student.name}'s resume has been downloaded successfully.`,
-      });
-
-    } catch (error) {
-      toast({
-        title: "Error Generating Resume",
-        description: "There was an error creating the resume PDF. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSendEmail = () => {
-    toast({
-      title: "Send Email",
-      description: `Opening email client for ${student?.email}...`,
-    });
-  };
-
-  const handleUpdateStatus = (newStatus: string) => {
-    toast({
-      title: "Status Updated",
-      description: `${student?.name}'s placement status updated to ${newStatus}`,
-    });
-  };
-
-  if (!student) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>{student.name} - Student Profile</DialogTitle>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleDownloadResume}>
-                <Download className="h-4 w-4 mr-1" />
-                Resume
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleSendEmail}>
-                <Mail className="h-4 w-4 mr-1" />
-                Email
-              </Button>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="academic">Academic</TabsTrigger>
-            <TabsTrigger value="placement">Placement</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            {/* Basic Information */}
-            <div className="grid md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xl">
-                      {student.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <h3 className="font-bold">{student.name}</h3>
-                      <p className="text-sm text-muted-foreground">{student.profileDetails.rollNumber}</p>
-                      <Badge className={
-                        student.placementStatus === 'Placed' ? 'bg-secondary text-secondary-foreground' :
-                        student.placementStatus === 'In Process' ? 'bg-accent text-accent-foreground' :
-                        'bg-muted text-muted-foreground'
-                      }>
-                        {student.placementStatus}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      {student.email}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      {student.phone}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      {student.location}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                      {student.branch} - {student.year}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">CGPA</span>
-                      <span className="font-bold text-primary">{student.cgpa}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Resume Score</span>
-                      <span className="font-bold text-secondary">{student.resumeScore}%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Applications</span>
-                      <span className="font-bold">{student.applications}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Offers</span>
-                      <span className="font-bold text-accent">{student.offers}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Skills */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Code className="h-5 w-5" />
-                  Skills & Technologies
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {student.skillSet.map((skill, idx) => (
-                    <Badge key={idx} variant="outline">{skill}</Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Personal Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Date of Birth</label>
-                    <p>{student.profileDetails.dateOfBirth}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Father's Name</label>
-                    <p>{student.profileDetails.fatherName}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Mother's Name</label>
-                    <p>{student.profileDetails.motherName}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Emergency Contact</label>
-                    <p>{student.profileDetails.emergencyContact}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="text-sm font-medium text-muted-foreground">Address</label>
-                    <p>{student.profileDetails.address}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Current Placement Status */}
-            {student.company && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="h-5 w-5" />
-                    Current Placement
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-semibold">{student.company}</h4>
-                      <p className="text-muted-foreground">Package: {student.package}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleUpdateStatus('Verified')}>
-                        Verify Placement
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="academic" className="space-y-4">
-            {/* Academic Performance */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Academic Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">10th Percentage</p>
-                    <p className="text-2xl font-bold text-primary">{student.academicDetails.tenthPercentage}%</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">12th Percentage</p>
                     <p className="text-2xl font-bold text-secondary">{student.academicDetails.twelfthPercentage}%</p>
                   </div>
                   <div className="text-center p-4 bg-muted rounded-lg">

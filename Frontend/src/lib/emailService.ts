@@ -18,6 +18,14 @@ if (EMAILJS_PUBLIC_KEY && EMAILJS_PUBLIC_KEY !== 'your-public-key') {
 export const checkEmailConfiguration = (): { configured: boolean; service: string; issues: string[] } => {
   const issues: string[] = [];
   
+  // Debug logging
+  console.log('🔍 Email Configuration Check:');
+  console.log('EMAILJS_SERVICE_ID:', EMAILJS_SERVICE_ID);
+  console.log('EMAILJS_TEMPLATE_ID:', EMAILJS_TEMPLATE_ID);
+  console.log('EMAILJS_PUBLIC_KEY:', EMAILJS_PUBLIC_KEY);
+  console.log('WEB3FORMS_ACCESS_KEY:', WEB3FORMS_ACCESS_KEY);
+  console.log('SMTP_TOKEN:', SMTP_TOKEN);
+  
   // Check EmailJS configuration
   if (EMAILJS_SERVICE_ID === 'service_karm_placement' || !EMAILJS_SERVICE_ID) {
     issues.push('EmailJS Service ID not configured');
@@ -30,18 +38,22 @@ export const checkEmailConfiguration = (): { configured: boolean; service: strin
   }
   
   if (issues.length === 0) {
+    console.log('✅ EmailJS is configured');
     return { configured: true, service: 'EmailJS', issues: [] };
   }
   
   // Check alternative services
   if (WEB3FORMS_ACCESS_KEY && WEB3FORMS_ACCESS_KEY !== 'your-web3forms-key') {
+    console.log('✅ Web3Forms is configured');
     return { configured: true, service: 'Web3Forms', issues: [] };
   }
   
   if (SMTP_TOKEN && SMTP_TOKEN !== 'your-smtp-token') {
+    console.log('✅ SMTP.js is configured');
     return { configured: true, service: 'SMTP.js', issues: [] };
   }
   
+  console.log('❌ No email service configured');
   return { 
     configured: false, 
     service: 'none', 

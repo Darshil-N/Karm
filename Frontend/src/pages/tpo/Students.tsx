@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from '@/hooks/use-toast';
 import { useState, useMemo, useEffect } from 'react';
 import { StudentService, Student } from '@/services/firebaseService';
+import { sendBulkEmailFree, EmailData } from '@/lib/emailService';
 import { 
   Search,
   Filter,
@@ -28,7 +29,7 @@ import {
   Send,
   FileText
 } from 'lucide-react';
-import StudentProfileModal from '@/components/modals/StudentProfileModal';
+import StudentProfileModal from '@/components/modals/StudentProfileModal_new';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -105,7 +106,7 @@ const Students = () => {
         student.placementStatus,
         student.company || 'N/A',
         student.package || 'N/A',
-        student.skillSet.slice(0, 3).join(', ') + (student.skillSet.length > 3 ? '...' : '')
+        (student.skillSet || []).slice(0, 3).join(', ') + ((student.skillSet || []).length > 3 ? '...' : '')
       ]);
 
       // Add table
@@ -181,7 +182,7 @@ const Students = () => {
     setBulkActionOpen(true);
   };
 
-  const handleBulkEmail = () => {
+  const handleBulkEmail = async () => {
     if (selectedStudents.size === 0) {
       toast({
         title: "No Students Selected",
@@ -191,23 +192,36 @@ const Students = () => {
       return;
     }
 
-    const selectedStudentList = filteredStudents.filter(student => 
-      selectedStudents.has(student.id)
-    );
-    
-    const emailSubject = "Placement Updates from TPO";
-    const emailBody = `Dear Students,\n\nWe have important placement updates for you.\n\nPlease check your placement portal for more details.\n\nBest regards,\nTPO Office`;
-    
-    const mailtoLink = `mailto:${selectedStudentList.map(s => s.email).join(',')}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    
-    window.open(mailtoLink, '_blank');
-    
-    toast({
-      title: "Email Client Opened",
-      description: `Bulk email prepared for ${selectedStudents.size} students.`,
-    });
+    const selectedStudentList = filteredStudents.filter(student => selectedStudents.has(student.id));
+    const emails = selectedStudentList.map(s => s.email).filter(Boolean);
 
-    setBulkActionOpen(false);
+    const emailSubject = "Placement Updates from TPO";
+    const emailBody = `Dear Student,\n\nWe have important placement updates for you.\n\nPlease check your placement portal for more details.\n\nBest regards,\nTPO Office`;
+
+    const emailData: EmailData = {
+      to: emails,
+      subject: emailSubject,
+      message: emailBody,
+      from: 'no-reply@college.edu',
+      senderName: 'TPO Office'
+    };
+
+    try {
+      toast({ title: 'Sending Emails', description: `Sending emails to ${emails.length} students...` });
+
+      const result = await sendBulkEmailFree(emailData);
+
+      if (result.success) {
+        toast({ title: 'Emails Sent', description: `Successfully sent emails to ${result.sentCount} students.` });
+        setSelectedStudents(new Set());
+        setBulkActionOpen(false);
+      } else {
+        toast({ title: 'Email Send Failed', description: `Failed to send emails. ${result.errors?.slice(0,2).join('; ')}`, variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Bulk email error:', error);
+      toast({ title: 'Error Sending Emails', description: 'There was an error sending bulk emails. Check configuration.', variant: 'destructive' });
+    }
   };
 
   const handleBulkStatusUpdate = async (newStatus: string) => {
@@ -276,39 +290,89 @@ const Students = () => {
     setStudentProfileOpen(true);
   };
 
-  const handleDownloadResume = (studentId: string, studentName: string) => {
+  const handleDownloadResume = async (studentId: string, studentName: string) => {
     toast({
       title: "Download Resume",
-      description: `Downloading ${studentName}'s resume...`,
+      description: `Preparing ${studentName}'s resume PDF...`,
     });
-    
-    // Simulate file download
-    setTimeout(() => {
-      // Create a simple text file for demonstration
-      const resumeContent = `
-Resume - ${studentName}
-Student ID: ${studentId}
-Generated on: ${new Date().toLocaleDateString()}
 
-This is a placeholder resume file.
-In a real application, this would download the actual PDF resume.
-      `;
-      
-      const blob = new Blob([resumeContent], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${studentName.replace(/\s+/g, '_')}_Resume.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Download Complete",
-        description: `${studentName}'s resume has been downloaded.`,
-      });
-    }, 1000);
+    try {
+      const student = await StudentService.getStudentById(studentId);
+      if (!student) throw new Error('Student not found');
+
+      // Generate PDF similar to StudentProfileModal
+      const doc = new jsPDF();
+      doc.setFontSize(24);
+      doc.setTextColor(40);
+      doc.text(student.name || studentName, 20, 25);
+
+      doc.setFontSize(12);
+      doc.setTextColor(100);
+      if (student.email) doc.text(student.email, 20, 35);
+      if (student.phone) doc.text(student.phone, 20, 42);
+      if (student.location) doc.text(student.location, 20, 49);
+
+      // Education
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text('Education', 20, 65);
+      doc.setFontSize(12);
+      doc.setTextColor(60);
+      doc.text(`${student.branch || ''} - ${student.year || ''}`, 20, 75);
+      doc.text(`CGPA: ${student.cgpa ?? 'N/A'}`, 20, 82);
+
+      // Skills
+      doc.setFontSize(16);
+      doc.setTextColor(40);
+      doc.text('Skills', 20, 100);
+      doc.setFontSize(12);
+      doc.setTextColor(60);
+      const skillsText = (student.skillSet || []).join(', ');
+      const skillsLines = doc.splitTextToSize(skillsText, 170);
+      doc.text(skillsLines, 20, 110);
+
+      // Projects
+      if (student.academicDetails?.projects && student.academicDetails.projects.length > 0) {
+        let yPosition = 130;
+        doc.setFontSize(16);
+        doc.setTextColor(40);
+        doc.text('Projects', 20, yPosition);
+        student.academicDetails.projects.forEach((project, index) => {
+          yPosition += 15;
+          doc.setFontSize(14);
+          doc.setTextColor(60);
+          doc.text(`${index + 1}. ${project.title}`, 20, yPosition);
+
+          yPosition += 8;
+          doc.setFontSize(10);
+          doc.setTextColor(80);
+          const descLines = doc.splitTextToSize(project.description || '', 170);
+          doc.text(descLines, 25, yPosition);
+          yPosition += (descLines.length * 5) + 6;
+        });
+      }
+
+      // Placement info
+      if (student.placementStatus === 'Placed' && student.company) {
+        const placementY = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 20 : 220;
+        doc.setFontSize(16);
+        doc.setTextColor(40);
+        doc.text('Placement Details', 20, placementY);
+        doc.setFontSize(12);
+        doc.setTextColor(60);
+        doc.text(`Company: ${student.company}`, 20, placementY + 12);
+        if (student.package) doc.text(`Package: ${student.package}`, 20, placementY + 19);
+        doc.text(`Status: ${student.placementStatus}`, 20, placementY + 26);
+      }
+
+      const fileName = `${(student.name || studentName).replace(/\s+/g, '_')}_Resume.pdf`;
+      doc.save(fileName);
+
+      toast({ title: 'Resume Downloaded', description: `${studentName}'s resume PDF has been downloaded.` });
+    } catch (error) {
+      console.error('Error downloading resume as PDF:', error);
+      toast({ title: 'Error', description: 'Failed to generate/download resume PDF', variant: 'destructive' });
+    }
   };
 
   const handleUpdateStudent = (updatedStudent: Student) => {
@@ -350,7 +414,7 @@ In a real application, this would download the actual PDF resume.
         student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.branch.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.skillSet.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+        (student.skillSet || []).some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
 
       // Branch filter
       const matchesBranch = selectedBranch === 'all' || student.branch === selectedBranch;
@@ -616,7 +680,11 @@ In a real application, this would download the actual PDF resume.
             </CardContent>
           </Card>
         ) : (
-          filteredStudents.map((student) => (
+          filteredStudents.map((student) => {
+            // Ensure student object exists and has all required properties
+            if (!student || !student.id) return null;
+            
+            return (
             <Card key={student.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -678,14 +746,14 @@ In a real application, this would download the actual PDF resume.
                           )}
                           <div>Resume Score: <span className="font-medium">{student.resumeScore}%</span></div>
                           <div className="flex flex-wrap gap-1 mt-2">
-                            {student.skillSet.slice(0, 3).map((skill, idx) => (
+                            {(student.skillSet || []).slice(0, 3).map((skill, idx) => (
                               <Badge key={idx} variant="outline" className="text-xs">
                                 {skill}
                               </Badge>
                             ))}
-                            {student.skillSet.length > 3 && (
+                            {(student.skillSet || []).length > 3 && (
                               <Badge variant="outline" className="text-xs">
-                                +{student.skillSet.length - 3} more
+                                +{(student.skillSet || []).length - 3} more
                               </Badge>
                             )}
                           </div>
@@ -706,7 +774,8 @@ In a real application, this would download the actual PDF resume.
                 </div>
               </CardContent>
             </Card>
-          ))
+            );
+          }).filter(Boolean)
         )}
       </div>
 
